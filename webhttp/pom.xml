@@ -1,0 +1,150 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.maven.test</groupId>
+    <artifactId>jProject</artifactId>
+    <packaging>jar</packaging>
+    <version>1.0-SNAPSHOT</version>
+    <name>jProject</name>
+    <url>http://maven.apache.org</url>
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <properties>
+      <maven.build.timestamp.format>yyyyMMdd-HHmmss</maven.build.timestamp.format>
+      <maven.compiler.source>1.8</maven.compiler.source>
+      <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.lazerycode.jmeter</groupId>
+                <artifactId>jmeter-maven-plugin</artifactId>
+                <version>2.9.0</version>
+                <!-- <version>3.3.0</version> -->
+
+                <configuration>
+                    <!-- <jmeterVersion>5.0</jmeterVersion> -->
+
+                    <!--jmeterExtensions is for adding extra components that you have used in the test plan-->
+                    <jmeterExtensions>
+                        <artifact>kg.apc:jmeter-plugins-dummy:0.4</artifact>
+                        <artifact>kg.apc:jmeter-plugins-graphs-ggl:2.0</artifact>
+                        <artifact>kg.apc:jmeter-plugins-synthesis:2.2</artifact>
+                        <!--<artifact>kg.apc:jmeter-plugins-cmd:2.2</artifact> -->
+                    </jmeterExtensions>
+
+                    <downloadExtensionDependencies>true</downloadExtensionDependencies>
+
+                    <!-- <resultsFileFormat>xml</resultsFileFormat>
+                    <appendResultsTimestamp>true</appendResultsTimestamp>
+                    <testResultsTimestamp>false</testResultsTimestamp>
+                    <resultsFileNameDateFormat>yyyyMMdd-HHmmss</resultsFileNameDateFormat>
+                    <ignoreResultFailures>true</ignoreResultFailures>
+                    <skipTests>false</skipTests>
+                    <errorRateThresholdInPercent>1</errorRateThresholdInPercent> -->
+                    <generateReports>true</generateReports>
+                    <!-- <resultsDirectory>/jsonFile</resultsDirectory> -->
+                    <!--<resultsDirectory>${project.build.directory}/jmeter/results/${maven.build.timestamp}/</resultsDirectory> -->
+
+                    <propertiesUser>
+                        <threads.count>${threads.count}</threads.count>
+                        <rampup.duration>${rampup.duration}</rampup.duration>
+                        <loop.count>${loop.count}</loop.count>
+                    </propertiesUser>
+
+                    <propertiesJmeter>
+                        <!-- add jmeter properties-->
+                    </propertiesJmeter>
+
+                    <jMeterProcessJVMSettings>
+                        <xms>512</xms>
+                        <xmx>512</xmx>
+                        <arguments>
+                            <!-- add args if required -->
+
+                        </arguments>
+                    </jMeterProcessJVMSettings>
+                </configuration>
+
+                <executions>
+                    <!-- generate jmeter configs-->
+                    <execution>
+                        <id>configurations</id>
+                        <goals>
+                            <goal>configure</goal>
+                        </goals>
+                    </execution>
+                    <!-- run jmeter tests-->
+                    <execution>
+                        <id>jmeter-tests</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jmeter</goal>
+                        </goals>
+                    </execution>
+                    <!--fail build on errors in test-->
+                    <execution>
+                        <id>check-jmeter-results</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>results</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- <plugin>
+                <groupId>de.codecentric</groupId>
+                <artifactId>jmeter-graph-maven-plugin</artifactId>
+                <version>0.1.0</version>
+                <executions>
+                    <execution>
+                        <id>create-graphs</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>create-graph</goal>
+                        </goals>
+                        <configuration>
+                            <inputFile>${project.build.directory}/jmeter/results/${maven.build.timestamp}/*.jtl</inputFile>
+                            <inputFile>${project.build.directory}/jmeter/results/*.csv</inputFile>
+                            <graphs>
+                                <graph>
+                                    <pluginType>ThreadsStateOverTime</pluginType>
+                                    <width>800</width>
+                                    <height>600</height>
+                                    <outputFile>${project.build.directory}/jmeter/results/${maven.build.timestamp}/graphs/ThreadsStateOverTime.png</outputFile>
+                                    <outputFile>${project.build.directory}/jmeter/results/graphs/ThreadsStateOverTime.png</outputFile>
+                                </graph>
+                                <graph>
+                                    <pluginType>LatenciesOverTime</pluginType>
+                                    <width>800</width>
+                                    <height>600</height>
+                                    <outputFile>${project.build.directory}/jmeter/results/${maven.build.timestamp}/graphs/LatenciesOverTime.png</outputFile>
+                                    <outputFile>${project.build.directory}/jmeter/results/graphs/LatenciesOverTime.png</outputFile>
+                                </graph>
+                                <graph>
+                                    <pluginType>HitsPerSecond</pluginType>
+                                    <width>800</width>
+                                    <height>600</height>
+                                    <outputFile>${project.build.directory}/jmeter/results/${maven.build.timestamp}/graphs/HitsPerSecond.png</outputFile>
+                                    <outputFile>${project.build.directory}/jmeter/results/graphs/HitsPerSecond.png</outputFile>
+                                </graph>
+                                <graph>
+                                    <pluginType>ResponseCodesPerSecond</pluginType>
+                                    <width>800</width>
+                                    <height>600</height>
+                                    <outputFile>${project.build.directory}/jmeter/results/${maven.build.timestamp}/graphs/ResponseCodesPerSecond.png</outputFile>
+                                    <outputFile>${project.build.directory}/jmeter/results/graphs/ResponseCodesPerSecond.png</outputFile>
+                                </graph>                               
+                            </graphs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin> -->
+        </plugins>
+    </build>
+</project>

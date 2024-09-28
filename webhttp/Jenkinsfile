@@ -1,0 +1,73 @@
+pipeline {
+    agent any
+    
+    // parameters {
+    //     string(defaultValue: '1', name: 'threads', trim: true)
+    //     string(defaultValue: '2', name: 'rampup', trim: true)
+    //     string(defaultValue: '1', name: 'loop', trim: true)
+    // }
+    
+    parameters {
+        string defaultValue: "1", name: "threads", trim: true
+        string defaultValue: "1", name: "rampup", trim: true
+        string defaultValue: "1", name: "loop", trim: true
+    }
+
+
+    stages {
+        stage('scm-checkout'){
+            steps {
+                git branch: 'jmeter5.5', credentialsId: '8cf536f0-c46a-4cbc-abd8-1d4c807a2986', url: 'git@github.com:rohitm89-git/performance_engineering.git'
+            }
+        }
+        
+        stage('jmeter-test-run') {
+            steps {
+                // Run Maven on a Windows agent.
+                bat """cd webhttp/
+                mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"""
+            }
+        
+            post {
+                // If Maven was able to run the tests archive jtl and graphs
+                success {
+                    // copy required files to a new directory - written inside script block as groovy code is present
+                    script{
+                        def targetDir = "${WORKSPACE}\\webhttp\\target\\allArtifacts"
+                        bat """ mkdir ${targetDir}
+                        xcopy ${WORKSPACE}\\webhttp\\target\\jmeter\\results\\ ${targetDir} /s
+                        xcopy ${WORKSPACE}\\webhttp\\target\\jmeter\\reports\\ ${targetDir} /s"""
+                    
+                    // def targetDir = "**/webhttp/target/allArtifacts"
+                    // bat """ mkdir ${targetDir}
+                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${targetDir} /s
+                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/reports/ ${targetDir} /s"""
+                    
+                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${WORKSPACE}/webhttp/target/allArtifacts /s
+                    
+                    
+                    // zip zipFile: "allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "webhttp/target/jmeter/results/"
+                        // zip zipFile: "**\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"
+                        zip zipFile: "${WORKSPACE}\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"    
+                    
+                        archiveArtifacts "webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip"
+                    }
+                    // archiveArtifacts '**/webhttp/target/jmeter/results/'
+                }
+            }
+        }
+        
+        stage('publish-performance-trend-report'){
+            steps{
+                // perfReport sourceDataFiles: "**/*.csv", compareBuildPrevious: true, graphType: "Percentile Response Time", showTrendGraphs: true
+                perfReport filterRegex: "", graphType: "PRT", percentiles: "90,95,99", showTrendGraphs: true, sourceDataFiles: "**/*.csv", compareBuildPrevious: true
+            }
+        }
+        
+        stage('clear workspace'){
+            steps{
+                cleanWs(patterns: [[pattern: 'allArtifacts*', type: 'INCLUDE']])
+            }
+        }
+    }
+}
