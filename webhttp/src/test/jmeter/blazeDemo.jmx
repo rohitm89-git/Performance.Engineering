@@ -284,7 +284,6 @@ OUT.println(&quot;successfully found all files&quot;)
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
             <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
             <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-            <boolProp name="HTTPSampler.image_parser">true</boolProp>
             <boolProp name="HTTPSampler.concurrentDwn">true</boolProp>
             <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
             <stringProp name="HTTPSampler.connect_timeout"></stringProp>
@@ -437,10 +436,10 @@ log.info(&quot;Selected city is :&quot;+vars.get(&quot;departingCity&quot;));
 
 //if you always need to select the 2nd last value - just another script condition
 //vars.put(&quot;departingCity&quot;, departCities[city_count-2]);
-vars.put(&quot;departingCity&quot;, departCities.get(departCities.size()-2));
+//vars.put(&quot;departingCity&quot;, departCities.get(departCities.size()-2));
 
 //priting selected city to log optionally
-log.info(&quot;Selected city is :&quot;+vars.get(&quot;departingCity&quot;));
+//log.info(&quot;Selected city is :&quot;+vars.get(&quot;departingCity&quot;));
 
 
 </stringProp>
@@ -473,7 +472,7 @@ log.info(&quot;Selected city is :&quot;+vars.get(&quot;departingCity&quot;));
           </ConstantThroughputTimer>
           <hashTree/>
         </hashTree>
-        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="find_flights" enabled="false">
+        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="find_flights" enabled="true">
           <boolProp name="TransactionController.includeTimers">false</boolProp>
           <boolProp name="TransactionController.parent">false</boolProp>
         </TransactionController>
@@ -484,7 +483,7 @@ log.info(&quot;Selected city is :&quot;+vars.get(&quot;departingCity&quot;));
                 <elementProp name="fromPort" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.name">fromPort</stringProp>
-                  <stringProp name="Argument.value">Paris</stringProp>
+                  <stringProp name="Argument.value">${departingCity}</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                   <boolProp name="HTTPArgument.use_equals">true</boolProp>
                 </elementProp>
@@ -497,9 +496,9 @@ log.info(&quot;Selected city is :&quot;+vars.get(&quot;departingCity&quot;));
                 </elementProp>
               </collectionProp>
             </elementProp>
-            <stringProp name="HTTPSampler.domain">blazedemo.com</stringProp>
-            <stringProp name="HTTPSampler.port">443</stringProp>
-            <stringProp name="HTTPSampler.protocol">https</stringProp>
+            <stringProp name="HTTPSampler.domain"></stringProp>
+            <stringProp name="HTTPSampler.port"></stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
             <stringProp name="HTTPSampler.path">/reserve.php</stringProp>
             <stringProp name="HTTPSampler.method">POST</stringProp>
