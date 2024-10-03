@@ -35,7 +35,7 @@
                         <artifact>kg.apc:jmeter-plugins-dummy:0.4</artifact>
                         <artifact>kg.apc:jmeter-plugins-graphs-ggl:2.0</artifact>
                         <artifact>kg.apc:jmeter-plugins-synthesis:2.2</artifact>
-                        <artifact>kg.apc:meter-plugins-casutg:2.10</artifact>
+                        <artifact>kg.apc:jmeter-plugins-casutg:2.10</artifact>
                         <artifact>io.github.mderevyankoaqa:jmeter-plugins-influxdb2-listener:2.8</artifact>
                         <!--<artifact>kg.apc:jmeter-plugins-cmd:2.2</artifact> -->
                     </jmeterExtensions>
