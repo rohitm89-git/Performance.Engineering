@@ -1,6 +1,15 @@
 pipeline {
     agent any
-    
+
+    environment {
+        PROJECT_ID = 'rugged-sunbeam-438811-a1'
+        ZONE = 'asia-south2-a'
+        SERVICE_ACCOUNT_KEY = credentials('gcloud-svc-account')
+        CONTROLLER_MACHINE_TYPE = 'e2-micro'
+        // LOAD_GENERATOR_MACHINE_TYPE = 'n1-standard-2'
+        IMAGE_FAMILY = 'ubuntu-2004-lts' // or 'windows-server-2019' for Windows   
+    }
+
     // parameters {
     //     string(defaultValue: '1', name: 'threads', trim: true)
     //     string(defaultValue: '2', name: 'rampup', trim: true)
@@ -15,6 +24,36 @@ pipeline {
 
 
     stages {
+        stage('Provision VMs') {
+            steps {
+                script {
+                    // Authenticate with Google Cloud
+                    sh '''
+                        gcloud auth activate-service-account --key-file=${SERVICE_ACCOUNT_KEY}
+                        gcloud config set project ${PROJECT_ID}
+                    '''
+                    
+                    // Create Controller/LG VM
+                    sh '''
+                        gcloud compute instances create jmeter-controller \
+                            --zone=${ZONE} \
+                            --machine-type=${CONTROLLER_MACHINE_TYPE} \
+                            --image-family=${IMAGE_FAMILY} \
+                            --image-project=${IMAGE_PROJECT}
+                    '''
+                    
+                    // Create Load Generator VMs
+                    // sh '''
+                    //     gcloud compute instances create jmeter-loadgen-1 jmeter-loadgen-2 \
+                    //         --zone=${ZONE} \
+                    //         --machine-type=${LOAD_GENERATOR_MACHINE_TYPE} \
+                    //         --image-family=${IMAGE_FAMILY} \
+                    //         --image-project=${IMAGE_PROJECT}
+                    // '''
+                }
+            }
+        }
+        
         stage('scm-checkout'){
             steps {
                 git branch: 'feature/grafana-integration', credentialsId: '8cf536f0-c46a-4cbc-abd8-1d4c807a2986', url: 'git@github.com:rohitm89-git/Performance.Engineering.git'
