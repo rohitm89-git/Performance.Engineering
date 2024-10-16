@@ -53,10 +53,10 @@ pipeline {
                 }
             }
         }
-        
+
         stage('scm-checkout'){
             steps {
-                git branch: 'feature/grafana-integration', credentialsId: '8cf536f0-c46a-4cbc-abd8-1d4c807a2986', url: 'git@github.com:rohitm89-git/Performance.Engineering.git'
+                git branch: 'feature/cloud-integration', credentialsId: '8cf536f0-c46a-4cbc-abd8-1d4c807a2986', url: 'git@github.com:rohitm89-git/Performance.Engineering.git'
             }
         }
         
