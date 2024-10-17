@@ -88,7 +88,7 @@ pipeline {
                     //     gcloud compute scp -r ./* ${INSTANCE_NAME}:~/maven-project --zone=${ZONE}
                     // '''
                     bat '''
-                        gcloud compute scp --recurse "./*" buzz_selfhelp@%INSTANCE_NAME%:/home/buzz_selfhelp/maven-project --zone=%ZONE%
+                        gcloud compute scp --recurse ${WORKSPACE}\\webhttp %INSTANCE_NAME%:/maven-proj --zone=%ZONE%
                     '''
                 }
             }
