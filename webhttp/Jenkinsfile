@@ -61,7 +61,7 @@ pipeline {
         stage('Run Command on Windows Instance') {
             steps {
                 script {
-                    sleep 60 // sleep time to allow instance to fully boot before attempting SSH
+                    //sleep 60 // sleep time to allow instance to fully boot before attempting SSH
                     // SSH into the Windows instance and run the command to display gcloud version with retry loop
                     retry(5){
                         bat '''
@@ -88,7 +88,7 @@ pipeline {
                     //     gcloud compute scp -r ./* ${INSTANCE_NAME}:~/maven-project --zone=${ZONE}
                     // '''
                     bat '''
-                        gcloud compute scp --recurse ./* %INSTANCE_NAME%:~/maven-project --zone=${ZONE}
+                        gcloud compute scp --recurse ./* %INSTANCE_NAME%:~/maven-project --zone=%ZONE%
                     '''
                 }
             }
