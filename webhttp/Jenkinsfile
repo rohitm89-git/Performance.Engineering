@@ -2,12 +2,22 @@ pipeline {
     agent any
 
     environment {
-        PROJECT_ID = 'rugged-sunbeam-438811-a1'
-        ZONE = 'asia-south2-a'
-        SERVICE_ACCOUNT_KEY = credentials('gcloud-svc-account')
-        CONTROLLER_MACHINE_TYPE = 'e2-micro'
-        // LOAD_GENERATOR_MACHINE_TYPE = 'n1-standard-2'
-        IMAGE_FAMILY = 'ubuntu-2004-lts' // or 'windows-server-2019' for Windows   
+        // PROJECT_ID = 'rugged-sunbeam-438811-a1'
+        // ZONE = 'asia-south2-a'
+        // SERVICE_ACCOUNT_KEY = credentials('gcloud-svc-account')
+        // CONTROLLER_MACHINE_TYPE = 'e2-micro'
+        // // LOAD_GENERATOR_MACHINE_TYPE = 'n1-standard-2'
+        // IMAGE_FAMILY = 'ubuntu-2004-lts' // or 'windows-server-2019' for Windows   
+
+        CLOUDSDK_CORE_PROJECT='rugged-sunbeam-438811-a1'
+        PROJECT_ID = 'rugged-sunbeam-438811-a1' // Replace with your Google Cloud project ID
+        ZONE = 'asia-south2-a' // Replace with your preferred zone
+        MACHINE_TYPE = 'e2-micro' // Basic machine type
+        IMAGE_FAMILY = 'debian-11' // Choose Debian Linux image
+        IMAGE_PROJECT = 'debian-cloud' // Debian project
+        SERVICE_ACCOUNT_KEY = credentials('gcloud-svc-account') // Service account credentials from Jenkins
+        CLIENT_EMAIL = 'sdet101@rugged-sunbeam-438811-a1.iam.gserviceaccount.com'
+        INSTANCE_NAME = 'jenkins-windows-test-instance'
     }
 
     // parameters {
@@ -24,32 +34,42 @@ pipeline {
 
 
     stages {
-        stage('Provision VMs') {
+        stage('Authenticate with Google Cloud') {
             steps {
                 script {
-                    // Authenticate with Google Cloud
-                    sh '''
-                        gcloud auth activate-service-account --key-file=${SERVICE_ACCOUNT_KEY}
-                        gcloud config set project ${PROJECT_ID}
+                    // Authenticate with Google Cloud using the service account
+                    bat '''
+                        gcloud version ^
+                        && gcloud auth activate-service-account --key-file="%SERVICE_ACCOUNT_KEY%" ^
+                        && gcloud compute zones list
                     '''
-                    
-                    // Create Controller/LG VM
-                    sh '''
-                        gcloud compute instances create jmeter-controller \
-                            --zone=${ZONE} \
-                            --machine-type=${CONTROLLER_MACHINE_TYPE} \
-                            --image-family=${IMAGE_FAMILY} \
-                            --image-project=${IMAGE_PROJECT}
+                }
+            }
+        }
+
+        stage('Start compute instance') {
+            steps {
+                script {
+                    // SSH into the Windows instance and run the command to display gcloud version
+                    bat '''
+                        gcloud compute instances start jenkins-windows-test-instance --zone=%ZONE%
                     '''
-                    
-                    // Create Load Generator VMs
-                    // sh '''
-                    //     gcloud compute instances create jmeter-loadgen-1 jmeter-loadgen-2 \
-                    //         --zone=${ZONE} \
-                    //         --machine-type=${LOAD_GENERATOR_MACHINE_TYPE} \
-                    //         --image-family=${IMAGE_FAMILY} \
-                    //         --image-project=${IMAGE_PROJECT}
-                    // '''
+                }
+            }
+        }
+        
+        stage('Run Command on Windows Instance') {
+            steps {
+                script {
+                    sleep 60 // sleep time to allow instance to fully boot before attempting SSH
+                    // SSH into the Windows instance and run the command to display gcloud version with retry loop
+                    retry(5){
+                        bat '''
+                        gcloud compute ssh jenkins-windows-test-instance --zone=%ZONE% --command="gcloud --version; \
+                        ip -f inet address; \
+                        echo \\"this is inside the linux VM\\""
+                    '''
+                    }
                 }
             }
         }
@@ -59,54 +79,100 @@ pipeline {
                 git branch: 'feature/cloud-integration', credentialsId: '8cf536f0-c46a-4cbc-abd8-1d4c807a2986', url: 'git@github.com:rohitm89-git/Performance.Engineering.git'
             }
         }
+
+        stage('Copy maven project to VM') {
+            steps {
+                script {
+                    // Copy the checked out project to the VM
+                    // sh '''
+                    //     gcloud compute scp -r ./* ${INSTANCE_NAME}:~/maven-project --zone=${ZONE}
+                    // '''
+                    bat '''
+                        gcloud compute scp -r ./* %INSTANCE_NAME%:~/maven-project --zone=${ZONE}
+                    '''
+                }
+            }
+        }
+
+        stage('Install Dependencies on VM') {
+            steps {
+                script {
+                    // SSH into the VM and install Maven, Java, JMeter
+                    bat '''
+                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="
+                        sudo apt-get update;
+                        sudo apt-get install -y maven openjdk-11-jdk;
+                    '''
+                        // wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.5.tgz;
+                        // tar -xvzf apache-jmeter-5.5.tgz;"
+                }
+            }
+        }
         
         stage('jmeter-test-run') {
             steps {
                 // Run Maven on a Windows agent.
-                bat """cd webhttp/
-                mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"""
+                // bat """cd webhttp/
+                // mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"""
+                script {
+                    // Run the JMeter tests on the VM using the Maven project
+                    bat '''
+                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="
+                        cd ~/maven-project;
+                        mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"
+                    '''
+                }
             }
         
             post {
                 // If Maven was able to run the tests archive jtl and graphs
                 success {
                     // copy required files to a new directory - written inside script block as groovy code is present
-                    script{
-                        def targetDir = "${WORKSPACE}\\webhttp\\target\\allArtifacts"
-                        bat """ mkdir ${targetDir}
-                        xcopy ${WORKSPACE}\\webhttp\\target\\jmeter\\results\\ ${targetDir} /s
-                        xcopy ${WORKSPACE}\\webhttp\\target\\jmeter\\reports\\ ${targetDir} /s"""
+                    // script{
+                    //     def targetDir = "${WORKSPACE}\\webhttp\\target\\allArtifacts"
+                    //     bat """ mkdir ${targetDir}
+                    //     xcopy ${WORKSPACE}\\webhttp\\target\\jmeter\\results\\ ${targetDir} /s
+                    //     xcopy ${WORKSPACE}\\webhttp\\target\\jmeter\\reports\\ ${targetDir} /s"""
                     
-                    // def targetDir = "**/webhttp/target/allArtifacts"
-                    // bat """ mkdir ${targetDir}
-                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${targetDir} /s
-                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/reports/ ${targetDir} /s"""
+                    // // def targetDir = "**/webhttp/target/allArtifacts"
+                    // // bat """ mkdir ${targetDir}
+                    // // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${targetDir} /s
+                    // // xcopy ${WORKSPACE}/webhttp/target/jmeter/reports/ ${targetDir} /s"""
                     
-                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${WORKSPACE}/webhttp/target/allArtifacts /s
+                    // // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${WORKSPACE}/webhttp/target/allArtifacts /s
                     
                     
-                    // zip zipFile: "allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "webhttp/target/jmeter/results/"
-                        // zip zipFile: "**\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"
-                        zip zipFile: "${WORKSPACE}\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"    
+                    // // zip zipFile: "allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "webhttp/target/jmeter/results/"
+                    //     // zip zipFile: "**\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"
+                    //     zip zipFile: "${WORKSPACE}\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"    
                     
-                        archiveArtifacts "webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip"
-                    }
+                    //     archiveArtifacts "webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip"
+                    // }
                     // archiveArtifacts '**/webhttp/target/jmeter/results/'
+
+                    script {
+                    // Copy the JMeter results from the VM back to Jenkins
+                    bat '''
+                        gcloud compute scp %INSTANCE_NAME%:~/maven-project/target/results/* ./results --zone=%ZONE%
+                    '''
+                    // Archive the results as Jenkins artifacts
+                    archiveArtifacts artifacts: 'results/*', allowEmptyArchive: true
+                    }                    
                 }
             }
         }
         
-        stage('publish-performance-trend-report'){
-            steps{
-                // perfReport sourceDataFiles: "**/*.csv", compareBuildPrevious: true, graphType: "Percentile Response Time", showTrendGraphs: true
-                perfReport filterRegex: "", graphType: "PRT", percentiles: "90,95,99", showTrendGraphs: true, sourceDataFiles: "**/*.csv", compareBuildPrevious: true
-            }
-        }
+        // stage('publish-performance-trend-report'){
+        //     steps{
+        //         // perfReport sourceDataFiles: "**/*.csv", compareBuildPrevious: true, graphType: "Percentile Response Time", showTrendGraphs: true
+        //         perfReport filterRegex: "", graphType: "PRT", percentiles: "90,95,99", showTrendGraphs: true, sourceDataFiles: "**/*.csv", compareBuildPrevious: true
+        //     }
+        // }
         
-        stage('clear workspace'){
-            steps{
-                cleanWs(patterns: [[pattern: 'allArtifacts*', type: 'INCLUDE']])
-            }
-        }
+        // stage('clear workspace'){
+        //     steps{
+        //         cleanWs(patterns: [[pattern: 'allArtifacts*', type: 'INCLUDE']])
+        //     }
+        // }
     }
 }
