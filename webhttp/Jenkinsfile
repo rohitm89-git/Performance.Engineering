@@ -12,12 +12,12 @@ pipeline {
         CLOUDSDK_CORE_PROJECT='rugged-sunbeam-438811-a1'
         PROJECT_ID = 'rugged-sunbeam-438811-a1' // Replace with your Google Cloud project ID
         ZONE = 'asia-south2-a' // Replace with your preferred zone
-        MACHINE_TYPE = 'e2-micro' // Basic machine type
-        IMAGE_FAMILY = 'debian-11' // Choose Debian Linux image
-        IMAGE_PROJECT = 'debian-cloud' // Debian project
+        MACHINE_TYPE = 'e2-medium' // Basic machine type
+        IMAGE_FAMILY = 'ubuntu-2204-lts' //  debian-11
+        IMAGE_PROJECT = 'ubuntu-cloud' // Debian project
         SERVICE_ACCOUNT_KEY = credentials('gcloud-svc-account') // Service account credentials from Jenkins
         CLIENT_EMAIL = 'sdet101@rugged-sunbeam-438811-a1.iam.gserviceaccount.com'
-        INSTANCE_NAME = 'jenkins-windows-test-instance'
+        INSTANCE_NAME = 'jenkins-ubuntu-test-instance'
     }
 
     // parameters {
@@ -47,12 +47,30 @@ pipeline {
             }
         }
 
+        stage('Create Linux Compute Instance') {
+            steps {
+                script {
+                    // Create a new Linux Compute Engine instance
+                    bat '''
+                        gcloud compute instances create %INSTANCE_NAME% ^
+                        --zone=%ZONE% ^
+                        --machine-type=%MACHINE_TYPE% ^
+                        --image-family=%IMAGE_FAMILY% ^
+                        --image-project=%IMAGE_PROJECT% ^
+                        --boot-disk-size=50GB ^
+                        --metadata ubuntu-startup-script-ps1="Write-Host \\"Instance startup complete\\""
+                    '''
+                }
+            }
+        // }
+
         stage('Start compute instance') {
             steps {
                 script {
+                    sleep 30
                     // SSH into the Windows instance and run the command to display gcloud version
                     bat '''
-                        gcloud compute instances start jenkins-windows-test-instance --zone=%ZONE%
+                        gcloud compute instances start %INSTANCE_NAME% --zone=%ZONE%
                     '''
                 }
             }
@@ -132,7 +150,7 @@ pipeline {
                 script {
                     // Run the JMeter tests on the VM using the Maven project
                     bat '''
-                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="cd /home/Rohit/jmeter-project; \
+                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="cd /home/Rohit/jmeter-project/webhttp; \
                         mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"
                     '''
                 }
