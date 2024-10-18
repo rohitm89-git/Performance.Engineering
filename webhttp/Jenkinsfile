@@ -57,6 +57,16 @@ pipeline {
                 }
             }
         }
+
+        stage('Find out who SSHing to vm') {
+            steps {
+                script {
+                    bat '''
+                        gcloud compute ssh jenkins-windows-test-instance
+                    '''
+                }
+            }
+        }
         
         stage('Run Command on Windows Instance') {
             steps {
@@ -88,7 +98,7 @@ pipeline {
                     //     gcloud compute scp -r ./* ${INSTANCE_NAME}:~/maven-project --zone=${ZONE}
                     // '''
                     bat '''
-                        gcloud compute scp --recurse ${WORKSPACE}\\webhttp %INSTANCE_NAME%:/maven-proj --zone=%ZONE%
+                        gcloud compute scp --recurse "${WORKSPACE}/webhttp" %INSTANCE_NAME%:~/maven-proj --zone=%ZONE%
                     '''
                 }
             }
