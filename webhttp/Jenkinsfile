@@ -109,21 +109,21 @@ pipeline {
             }
         }
 
-        stage('Copy maven project to VM') {
-            steps {
-                script {
-                    // Copy the checked out project to the VM
-                    // sh '''
-                    //     gcloud compute scp -r ./* ${INSTANCE_NAME}:~/maven-project --zone=${ZONE}
-                    // '''
-                    bat '''
-                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="mkdir jmeter-project" ^
-                        && echo %WORKSPACE% ^
-                        && gcloud compute scp --recurse "%WORKSPACE%\\webhttp" %INSTANCE_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
-                    '''
-                }
-            }
-        }
+        // stage('Copy maven project to VM') {
+        //     steps {
+        //         script {
+        //             // Copy the checked out project to the VM
+        //             // sh '''
+        //             //     gcloud compute scp -r ./* ${INSTANCE_NAME}:~/maven-project --zone=${ZONE}
+        //             // '''
+        //             bat '''
+        //                 gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="mkdir jmeter-project" ^
+        //                 && echo %WORKSPACE% ^
+        //                 && gcloud compute scp --recurse "%WORKSPACE%\\webhttp" %INSTANCE_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
+        //             '''
+        //         }
+        //     }
+        // }
 
         // stage('Install Dependencies on VM') {
         //     steps {
@@ -151,7 +151,7 @@ pipeline {
                     // Run the JMeter tests on the VM using the Maven project
                     bat '''
                         gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="cd /home/Rohit/jmeter-project/webhttp; \
-                        mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"
+                        mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} verify"
                     '''
                 }
             }
@@ -160,36 +160,38 @@ pipeline {
                 // If Maven was able to run the tests archive jtl and graphs
                 success {
                     // copy required files to a new directory - written inside script block as groovy code is present
-                    // script{
-                    //     def targetDir = "${WORKSPACE}\\webhttp\\target\\allArtifacts"
-                    //     bat """ mkdir ${targetDir}
-                    //     xcopy ${WORKSPACE}\\webhttp\\target\\jmeter\\results\\ ${targetDir} /s
-                    //     xcopy ${WORKSPACE}\\webhttp\\target\\jmeter\\reports\\ ${targetDir} /s"""
+                    script{
+                        def targetDir = "${WORKSPACE}\\webhttp\\target\\allArtifacts"
+                        bat """ 
+                            mkdir ${targetDir}
+                            gcloud compute scp --recurse %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/results ${targetDir} --zone=%ZONE%
+                            gcloud compute scp --recurse %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/reports ${targetDir} --zone=%ZONE%
+                        """
                     
-                    // // def targetDir = "**/webhttp/target/allArtifacts"
-                    // // bat """ mkdir ${targetDir}
-                    // // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${targetDir} /s
-                    // // xcopy ${WORKSPACE}/webhttp/target/jmeter/reports/ ${targetDir} /s"""
+                    // def targetDir = "**/webhttp/target/allArtifacts"
+                    // bat """ mkdir ${targetDir}
+                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${targetDir} /s
+                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/reports/ ${targetDir} /s"""
                     
-                    // // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${WORKSPACE}/webhttp/target/allArtifacts /s
+                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${WORKSPACE}/webhttp/target/allArtifacts /s
                     
                     
-                    // // zip zipFile: "allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "webhttp/target/jmeter/results/"
-                    //     // zip zipFile: "**\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"
-                    //     zip zipFile: "${WORKSPACE}\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"    
+                    // zip zipFile: "allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "webhttp/target/jmeter/results/"
+                        // zip zipFile: "**\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"
+                        zip zipFile: "${WORKSPACE}\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"    
                     
-                    //     archiveArtifacts "webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip"
-                    // }
+                        archiveArtifacts "webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip"
+                    }
                     // archiveArtifacts '**/webhttp/target/jmeter/results/'
 
-                    script {
-                    // Copy the JMeter results from the VM back to Jenkins
-                    bat '''
-                        gcloud compute scp %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/results/* ./results_hello --zone=%ZONE%
-                    '''
-                    // Archive the results as Jenkins artifacts
-                    archiveArtifacts artifacts: 'results_hello/*', allowEmptyArchive: true
-                    }                    
+                    // script {
+                    // // Copy the JMeter results from the VM back to Jenkins
+                    // bat '''
+                    //     gcloud compute scp %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/results/* ./results_hello --zone=%ZONE%
+                    // '''
+                    // // Archive the results as Jenkins artifacts
+                    // archiveArtifacts artifacts: 'results_hello/*', allowEmptyArchive: true
+                    // }                    
                 }
             }
         }
