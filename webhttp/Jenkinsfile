@@ -163,9 +163,9 @@ pipeline {
                     script{
                         def targetDir = "${WORKSPACE}\\webhttp\\target\\allArtifacts"
                         bat """ 
-                            mkdir ${targetDir}
-                            gcloud compute scp --recurse %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/results ${targetDir} --zone=%ZONE%
-                            gcloud compute scp --recurse %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/reports ${targetDir} --zone=%ZONE%
+                            mkdir ${targetDir} ^
+                            && gcloud compute scp --recurse %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/results ${targetDir} --zone=%ZONE% ^
+                            && gcloud compute scp --recurse %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/reports ${targetDir} --zone=%ZONE%
                         """
                     
                     // def targetDir = "**/webhttp/target/allArtifacts"
