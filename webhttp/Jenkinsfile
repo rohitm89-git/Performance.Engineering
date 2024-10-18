@@ -160,6 +160,7 @@ pipeline {
                 // If Maven was able to run the tests archive jtl and graphs
                 success {
                     // copy required files to a new directory - written inside script block as groovy code is present
+                    // $ notation works probably because bat commands are inside """ instead of '''. havent tested though.
                     script{
                         def targetDir = "${WORKSPACE}\\webhttp\\target\\allArtifacts"
                         bat """ 
@@ -208,5 +209,11 @@ pipeline {
         //         cleanWs(patterns: [[pattern: 'allArtifacts*', type: 'INCLUDE']])
         //     }
         // }
+
+        post {
+            always {
+                cleanWs(patterns: [[pattern: 'allArtifacts*', type: 'INCLUDE']])
+            }
+        }
     }
 }
