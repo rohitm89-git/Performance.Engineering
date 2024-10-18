@@ -13,8 +13,8 @@ pipeline {
         PROJECT_ID = 'rugged-sunbeam-438811-a1' // Replace with your Google Cloud project ID
         ZONE = 'asia-south2-a' // Replace with your preferred zone
         MACHINE_TYPE = 'e2-medium' // Basic machine type
-        IMAGE_FAMILY = 'ubuntu-2204-lts' //  debian-11
-        IMAGE_PROJECT = 'ubuntu-cloud' // Debian project
+        IMAGE_FAMILY = 'ubuntu-2204-lts' //  fetch from: gcloud compute images list
+        IMAGE_PROJECT = 'ubuntu-os-cloud' // fetch from: gcloud compute images list
         SERVICE_ACCOUNT_KEY = credentials('gcloud-svc-account') // Service account credentials from Jenkins
         CLIENT_EMAIL = 'sdet101@rugged-sunbeam-438811-a1.iam.gserviceaccount.com'
         INSTANCE_NAME = 'jenkins-ubuntu-test-instance'
