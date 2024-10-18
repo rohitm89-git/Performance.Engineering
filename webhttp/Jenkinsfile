@@ -57,7 +57,7 @@ pipeline {
                         --machine-type=%MACHINE_TYPE% ^
                         --image-family=%IMAGE_FAMILY% ^
                         --image-project=%IMAGE_PROJECT% ^
-                        --boot-disk-size=50GB ^
+                        --boot-disk-size=100GB ^
                         --metadata ubuntu-startup-script-ps1="Write-Host \\"Instance startup complete\\""
                     '''
                 }
