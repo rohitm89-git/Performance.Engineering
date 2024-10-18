@@ -185,7 +185,7 @@ pipeline {
                     script {
                     // Copy the JMeter results from the VM back to Jenkins
                     bat '''
-                        gcloud compute scp %INSTANCE_NAME%:/home/Rohit/jmeter-project/target/results/* ./results_hello --zone=%ZONE%
+                        gcloud compute scp %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/results/* ./results_hello --zone=%ZONE%
                     '''
                     // Archive the results as Jenkins artifacts
                     archiveArtifacts artifacts: 'results_hello/*', allowEmptyArchive: true
