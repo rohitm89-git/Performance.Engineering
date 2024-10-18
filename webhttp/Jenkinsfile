@@ -125,7 +125,7 @@ pipeline {
         //     }
         // }
 
-        // stage('Install Dependencies on VM') {
+        // stage('Install Dependencies on VM') { // this step failed though installations were successful. need to add checks.
         //     steps {
         //         script {
         //             // SSH into the VM and install Maven, Java, JMeter
@@ -209,11 +209,11 @@ pipeline {
         //         cleanWs(patterns: [[pattern: 'allArtifacts*', type: 'INCLUDE']])
         //     }
         // }
+    }
 
-        post {
+    post {
             always {
                 cleanWs(patterns: [[pattern: 'allArtifacts*', type: 'INCLUDE']])
             }
         }
-    }
 }
