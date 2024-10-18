@@ -47,27 +47,26 @@ pipeline {
             }
         }
 
-        stage('Create Linux Compute Instance') {
-            steps {
-                script {
-                    // Create a new Linux Compute Engine instance
-                    bat '''
-                        gcloud compute instances create %INSTANCE_NAME% ^
-                        --zone=%ZONE% ^
-                        --machine-type=%MACHINE_TYPE% ^
-                        --image-family=%IMAGE_FAMILY% ^
-                        --image-project=%IMAGE_PROJECT% ^
-                        --boot-disk-size=100GB ^
-                        --metadata ubuntu-startup-script-ps1="Write-Host \\"Instance startup complete\\""
-                    '''
-                }
-            }
-        }
+        // stage('Create Linux Compute Instance') {
+        //     steps {
+        //         script {
+        //             // Create a new Linux Compute Engine instance
+        //             bat '''
+        //                 gcloud compute instances create %INSTANCE_NAME% ^
+        //                 --zone=%ZONE% ^
+        //                 --machine-type=%MACHINE_TYPE% ^
+        //                 --image-family=%IMAGE_FAMILY% ^
+        //                 --image-project=%IMAGE_PROJECT% ^
+        //                 --boot-disk-size=100GB ^
+        //                 --metadata ubuntu-startup-script-ps1="Write-Host \\"Instance startup complete\\""
+        //             '''
+        //         }
+        //     }
+        // }
 
         stage('Start compute instance') {
             steps {
                 script {
-                    sleep 30
                     // SSH into the Windows instance and run the command to display gcloud version
                     bat '''
                         gcloud compute instances start %INSTANCE_NAME% --zone=%ZONE%
@@ -76,7 +75,7 @@ pipeline {
             }
         }
 
-        // stage('Find out who SSHing to vm') {
+        // stage('Find out who is SSHing to vm') {
         //     steps {
         //         script {
         //             bat '''
@@ -86,7 +85,7 @@ pipeline {
         //     }
         // } //ROHIT is doing it
         
-        stage('Run Command on Windows Instance') {
+        stage('Run Command on Linux Instance') {
             steps {
                 script {
                     //sleep 60 // sleep time to allow instance to fully boot before attempting SSH
@@ -94,7 +93,7 @@ pipeline {
                     // created a directory to copy files from jenkins workspace to vm
                     retry(5){
                         bat '''
-                        gcloud compute ssh jenkins-windows-test-instance --zone=%ZONE% --command="gcloud --version; \
+                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="gcloud --version; \
                         ip -f inet address; \
                         mkdir jmeter-project; \
                         echo \\"this is inside the linux VM\\""
