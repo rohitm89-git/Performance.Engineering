@@ -58,25 +58,27 @@ pipeline {
             }
         }
 
-        stage('Find out who SSHing to vm') {
-            steps {
-                script {
-                    bat '''
-                        gcloud compute ssh jenkins-windows-test-instance
-                    '''
-                }
-            }
-        }
+        // stage('Find out who SSHing to vm') {
+        //     steps {
+        //         script {
+        //             bat '''
+        //                 gcloud compute ssh jenkins-windows-test-instance
+        //             '''
+        //         }
+        //     }
+        // } //ROHIT is doing it
         
         stage('Run Command on Windows Instance') {
             steps {
                 script {
                     //sleep 60 // sleep time to allow instance to fully boot before attempting SSH
                     // SSH into the Windows instance and run the command to display gcloud version with retry loop
+                    // created a directory to copy files from jenkins workspace to vm
                     retry(5){
                         bat '''
                         gcloud compute ssh jenkins-windows-test-instance --zone=%ZONE% --command="gcloud --version; \
                         ip -f inet address; \
+                        mkdir jmeter-project; \
                         echo \\"this is inside the linux VM\\""
                     '''
                     }
@@ -98,7 +100,7 @@ pipeline {
                     //     gcloud compute scp -r ./* ${INSTANCE_NAME}:~/maven-project --zone=${ZONE}
                     // '''
                     bat '''
-                        gcloud compute scp --recurse "${WORKSPACE}/webhttp" %INSTANCE_NAME%:~/maven-proj --zone=%ZONE%
+                        gcloud compute scp --recurse "%WORKSPACE%/webhttp" %INSTANCE_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
                     '''
                 }
             }
@@ -128,7 +130,7 @@ pipeline {
                     // Run the JMeter tests on the VM using the Maven project
                     bat '''
                         gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="
-                        cd ~/maven-project;
+                        cd ~/jmeter-project;
                         mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"
                     '''
                 }
@@ -163,10 +165,10 @@ pipeline {
                     script {
                     // Copy the JMeter results from the VM back to Jenkins
                     bat '''
-                        gcloud compute scp %INSTANCE_NAME%:~/maven-project/target/results/* ./results --zone=%ZONE%
+                        gcloud compute scp %INSTANCE_NAME%:/home/Rohit/jmeter-project/target/results/* ./results_hello --zone=%ZONE%
                     '''
                     // Archive the results as Jenkins artifacts
-                    archiveArtifacts artifacts: 'results/*', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'results_hello/*', allowEmptyArchive: true
                     }                    
                 }
             }
