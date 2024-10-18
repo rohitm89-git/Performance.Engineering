@@ -213,7 +213,7 @@ pipeline {
 
     post {
             always {
-                cleanWs(patterns: [[pattern: 'webhttp/target/allArtifacts*', type: 'INCLUDE', deleteDirs: true]])
+                cleanWs(deleteDirs: true, patterns: [[pattern: 'webhttp/target/allArtifacts*', type: 'INCLUDE']])
             }
         }
 }
