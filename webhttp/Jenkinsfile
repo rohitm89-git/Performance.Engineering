@@ -100,7 +100,7 @@ pipeline {
                     //     gcloud compute scp -r ./* ${INSTANCE_NAME}:~/maven-project --zone=${ZONE}
                     // '''
                     bat '''
-                        gcloud compute scp --recurse "%WORKSPACE%/webhttp" %INSTANCE_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
+                        gcloud compute scp --recurse "%WORKSPACE%\\webhttp" %INSTANCE_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
                     '''
                 }
             }
@@ -111,8 +111,7 @@ pipeline {
                 script {
                     // SSH into the VM and install Maven, Java, JMeter
                     bat '''
-                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="
-                        sudo apt-get update;
+                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="sudo apt-get update; \
                         sudo apt-get install -y maven openjdk-11-jdk;
                     '''
                         // wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.5.tgz;
@@ -129,8 +128,7 @@ pipeline {
                 script {
                     // Run the JMeter tests on the VM using the Maven project
                     bat '''
-                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="
-                        cd ~/jmeter-project;
+                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="cd /home/Rohit/jmeter-project; \
                         mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"
                     '''
                 }
