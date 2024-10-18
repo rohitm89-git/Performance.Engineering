@@ -64,16 +64,16 @@ pipeline {
         //     }
         // }
 
-        stage('Start compute instance') {
-            steps {
-                script {
-                    // SSH into the Windows instance and run the command to display gcloud version
-                    bat '''
-                        gcloud compute instances start %INSTANCE_NAME% --zone=%ZONE%
-                    '''
-                }
-            }
-        }
+        // stage('Start compute instance') {
+        //     steps {
+        //         script {
+        //             // SSH into the Windows instance and run the command to display gcloud version
+        //             bat '''
+        //                 gcloud compute instances start %INSTANCE_NAME% --zone=%ZONE%
+        //             '''
+        //         }
+        //     }
+        // }
 
         // stage('Find out who is SSHing to vm') {
         //     steps {
@@ -85,23 +85,23 @@ pipeline {
         //     }
         // } //ROHIT is doing it
         
-        stage('Run Command on Linux Instance') {
-            steps {
-                script {
-                    //sleep 60 // sleep time to allow instance to fully boot before attempting SSH
-                    // SSH into the Windows instance and run the command to display gcloud version with retry loop
-                    // created a directory to copy files from jenkins workspace to vm
-                    retry(5){
-                        bat '''
-                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="gcloud --version; \
-                        ip -f inet address; \
-                        mkdir jmeter-project; \
-                        echo \\"this is inside the linux VM\\""
-                    '''
-                    }
-                }
-            }
-        }
+        // stage('Run Command on Linux Instance') {
+        //     steps {
+        //         script {
+        //             //sleep 60 // sleep time to allow instance to fully boot before attempting SSH
+        //             // SSH into the Windows instance and run the command to display gcloud version with retry loop
+        //             // created a directory to copy files from jenkins workspace to vm
+        //             retry(5){
+        //                 bat '''
+        //                 gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="gcloud --version; \
+        //                 ip -f inet address; \
+        //                 mkdir jmeter-project; \
+        //                 echo \\"this is inside the linux VM\\""
+        //             '''
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('scm-checkout'){
             steps {
@@ -124,22 +124,22 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies on VM') {
-            steps {
-                script {
-                    // SSH into the VM and install Maven, Java, JMeter
-                    bat '''
-                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="sudo apt-get update; \
-                        sudo apt install openjdk-11-jdk; \
-                        java --version; \
-                        sudo apt install maven -y; \
-                        mvn --version
-                    '''
-                        // wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.5.tgz;
-                        // tar -xvzf apache-jmeter-5.5.tgz;"
-                }
-            }
-        }
+        // stage('Install Dependencies on VM') {
+        //     steps {
+        //         script {
+        //             // SSH into the VM and install Maven, Java, JMeter
+        //             bat '''
+        //                 gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="sudo apt-get update; \
+        //                 sudo apt install openjdk-11-jdk; \
+        //                 java --version; \
+        //                 sudo apt install maven -y; \
+        //                 mvn --version
+        //             '''
+        //                 // wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.5.tgz;
+        //                 // tar -xvzf apache-jmeter-5.5.tgz;"
+        //         }
+        //     }
+        // }
         
         stage('jmeter-test-run') {
             steps {
