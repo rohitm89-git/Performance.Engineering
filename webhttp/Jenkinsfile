@@ -190,7 +190,7 @@ pipeline {
                         //     ping ${externalIp} >> 2.txt;
                         // """
 
-                        ipList = ipList + ${externalIp} + "," 
+                        ipList = ipList + externalIp + "," 
 
                         bat """
                             ping ${externalIp}
