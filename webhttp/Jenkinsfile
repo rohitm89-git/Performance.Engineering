@@ -199,7 +199,7 @@ pipeline {
 
                         bat """
                             gcloud compute ssh ${instance} --zone=${ZONE} --command="\
-                            cd apache-jmeter-5.6.3/bin; \
+                            cd /home/Rohit/apache-jmeter-5.6.3/bin; \
                             echo ### disabling ssl for rmi >> user.properties; \
                             echo server.rmi.ssl.disable=true >> user.properties; \
                             sh jmeter-server"
@@ -301,8 +301,8 @@ pipeline {
                         def targetDir = "${WORKSPACE}\\webhttp\\target\\allArtifacts"
                         bat """ 
                             mkdir ${targetDir} ^
-                            && gcloud compute scp --recurse %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/results ${targetDir} --zone=%ZONE% ^
-                            && gcloud compute scp --recurse %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/reports ${targetDir} --zone=%ZONE%
+                            && gcloud compute scp --recurse %CONTROLLER_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/results ${targetDir} --zone=%ZONE% ^
+                            && gcloud compute scp --recurse %CONTROLLER_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/reports ${targetDir} --zone=%ZONE%
                         """
                     
                     // def targetDir = "**/webhttp/target/allArtifacts"
