@@ -178,7 +178,7 @@ pipeline {
                 script{
                     def lgInstances = ['jenkins-ubuntu-lg1']
                     def externalIp, internalIp
-                    def ipList = []
+                    def ipList = ""
                     for(instance in lgInstances){
                         externalIp = bat(script: """@gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"""", returnStdout: true).trim() // @ is needed to get only o/p of command
                         internalIp = bat(script: """@gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].networkIP)\"""", returnStdout: true).trim()
@@ -190,7 +190,7 @@ pipeline {
                         //     ping ${externalIp} >> 2.txt;
                         // """
 
-                        ipList.add(externalIp)
+                        ipList = ipList + ${externalIp} + "," 
 
                         bat """
                             ping ${externalIp}
