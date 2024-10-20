@@ -146,34 +146,34 @@ pipeline {
         //     }
         // }
 
-        stage('Install Dependencies on Controller and LGs') {
-            steps {
-                script {
-                    def vmInstances = [env.LG1_NAME,env.LG2_NAME]
-                    // SSH into the VM and install Maven, Java, JMeter
-                    // catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                    for(instance in vmInstances){
-                        bat """
-                            gcloud compute ssh ${instance} --zone=${ZONE} --command="sudo apt-get update; \
-                            sudo apt install openjdk-11-jdk; \
-                            java --version; \
-                            sudo apt install maven -y; \
-                            mvn --version"
-                        """
-                    }
-                    // bat '''
-                    //     gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="sudo apt-get update; \
-                    //     sudo apt install openjdk-11-jdk; \
-                    //     java --version; \
-                    //     sudo apt install maven -y; \
-                    //     mvn --version"
-                    // '''
-                            // wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.5.tgz;
-                            // tar -xvzf apache-jmeter-5.5.tgz;"
-                    // }
-                }
-            }
-        }
+        // stage('Install Dependencies on Controller and LGs') {
+        //     steps {
+        //         script {
+        //             def vmInstances = [env.LG1_NAME,env.LG2_NAME]
+        //             // SSH into the VM and install Maven, Java, JMeter
+        //             // catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+        //             for(instance in vmInstances){
+        //                 bat """
+        //                     gcloud compute ssh ${instance} --zone=${ZONE} --command="sudo apt-get update; \
+        //                     sudo apt install openjdk-11-jdk; \
+        //                     java --version; \
+        //                     sudo apt install maven -y; \
+        //                     mvn --version"
+        //                 """
+        //             }
+        //             // bat '''
+        //             //     gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="sudo apt-get update; \
+        //             //     sudo apt install openjdk-11-jdk; \
+        //             //     java --version; \
+        //             //     sudo apt install maven -y; \
+        //             //     mvn --version"
+        //             // '''
+        //                     // wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.5.tgz;
+        //                     // tar -xvzf apache-jmeter-5.5.tgz;"
+        //             // }
+        //         }
+        //     }
+        // }
 
         stage('Install/Configure Jmeter and start jmeter-server on LGs') {
             steps {
@@ -188,15 +188,15 @@ pipeline {
                     // loop through each instance and install jmeter
                     for(instance in lgInstances) {
                         bat """
-                            gcloud compute ssh ${instance} --zone=${ZONE} --command="\
+                            gcloud compute ssh ${instance} --zone=${ZONE} --command=\"\
                             wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
                             tar -xvzf apache-jmeter-5.6.3.tgz; \
                             cd ~/apache-jmeter-5.6.3/bin; \
-                            echo $emptyVar >> user.properties; \
+                            echo ${emptyVar} >> user.properties; \
                             echo ### disabling ssl for rmi >> user.properties; \
                             echo server.rmi.ssl.disable=true >> user.properties; \
-                            echo $emptyVar >> user.properties; \
-                            sh jmeter-server
+                            echo ${emptyVar} >> user.properties; \
+                            sh jmeter-server\"
                         """
 
                         
