@@ -17,7 +17,8 @@ pipeline {
         IMAGE_PROJECT = 'ubuntu-os-cloud' // fetch from: gcloud compute images list
         SERVICE_ACCOUNT_KEY = credentials('gcloud-svc-account') // Service account credentials from Jenkins
         CLIENT_EMAIL = 'sdet101@rugged-sunbeam-438811-a1.iam.gserviceaccount.com'
-        INSTANCE_NAME = 'jenkins-ubuntu-test-instance'
+        // INSTANCE_NAME = 'jenkins-ubuntu-test-instance'
+        INSTANCE_NAME = 'jenkins-ubuntu-lg1'
     }
 
     // parameters {
@@ -64,16 +65,16 @@ pipeline {
         //     }
         // }
 
-        // stage('Start compute instance') {
-        //     steps {
-        //         script {
-        //             // SSH into the Windows instance and run the command to display gcloud version
-        //             bat '''
-        //                 gcloud compute instances start %INSTANCE_NAME% --zone=%ZONE%
-        //             '''
-        //         }
-        //     }
-        // }
+        stage('Start compute instance') {
+            steps {
+                script {
+                    // SSH into the Windows instance and run the command to display gcloud version
+                    bat '''
+                        gcloud compute instances start %INSTANCE_NAME% --zone=%ZONE%
+                    '''
+                }
+            }
+        }
 
         // stage('Find out who is SSHing to vm') {
         //     steps {
@@ -125,77 +126,93 @@ pipeline {
         //     }
         // }
 
-        // stage('Install Dependencies on VM') { // this step failed though installations were successful. need to add checks.
-        //     steps {
-        //         script {
-        //             // SSH into the VM and install Maven, Java, JMeter
-        //             bat '''
-        //                 gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="sudo apt-get update; \
-        //                 sudo apt install openjdk-11-jdk; \
-        //                 java --version; \
-        //                 sudo apt install maven -y; \
-        //                 mvn --version
-        //             '''
-        //                 // wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.5.tgz;
-        //                 // tar -xvzf apache-jmeter-5.5.tgz;"
-        //         }
-        //     }
-        // }
-        
-        stage('jmeter-test-run') {
+        stage('Install Dependencies on VM') { // this step failed though installations were successful. need to add checks.
             steps {
-                // Run Maven on a Windows agent.
-                // bat """cd webhttp/
-                // mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"""
                 script {
-                    // Run the JMeter tests on the VM using the Maven project
+                    // SSH into the VM and install Maven, Java, JMeter
+                    // catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                     bat '''
-                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="cd /home/Rohit/jmeter-project/webhttp; \
-                        mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} verify"
+                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="sudo apt-get update; \
+                        sudo apt install openjdk-11-jdk; \
+                        java --version; \
+                        sudo apt install maven -y; \
+                        mvn --version"
                     '''
-                }
-            }
-        
-            post {
-                // If Maven was able to run the tests archive jtl and graphs
-                success {
-                    // copy required files to a new directory - written inside script block as groovy code is present
-                    // $ notation works probably because bat commands are inside """ instead of '''. havent tested though.
-                    script{
-                        def targetDir = "${WORKSPACE}\\webhttp\\target\\allArtifacts"
-                        bat """ 
-                            mkdir ${targetDir} ^
-                            && gcloud compute scp --recurse %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/results ${targetDir} --zone=%ZONE% ^
-                            && gcloud compute scp --recurse %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/reports ${targetDir} --zone=%ZONE%
-                        """
-                    
-                    // def targetDir = "**/webhttp/target/allArtifacts"
-                    // bat """ mkdir ${targetDir}
-                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${targetDir} /s
-                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/reports/ ${targetDir} /s"""
-                    
-                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${WORKSPACE}/webhttp/target/allArtifacts /s
-                    
-                    
-                    // zip zipFile: "allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "webhttp/target/jmeter/results/"
-                        // zip zipFile: "**\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"
-                        zip zipFile: "${WORKSPACE}\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"    
-                    
-                        archiveArtifacts "webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip"
-                    }
-                    // archiveArtifacts '**/webhttp/target/jmeter/results/'
-
-                    // script {
-                    // // Copy the JMeter results from the VM back to Jenkins
-                    // bat '''
-                    //     gcloud compute scp %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/results/* ./results_hello --zone=%ZONE%
-                    // '''
-                    // // Archive the results as Jenkins artifacts
-                    // archiveArtifacts artifacts: 'results_hello/*', allowEmptyArchive: true
-                    // }                    
+                            // wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.5.tgz;
+                            // tar -xvzf apache-jmeter-5.5.tgz;"
+                    // }
                 }
             }
         }
+
+        stage('Install and Configure Jmeter') {
+            steps {
+                script {
+                    def setupScript =  '''
+                        wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
+                        tar -xvzf apache-jmeter-5.6.3.tgz;
+                    '''
+                    bat '''
+                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="${setupScript}"
+                    '''
+                }
+            }
+        }
+        
+        // stage('jmeter-test-run') {
+        //     steps {
+        //         // Run Maven on a Windows agent.
+        //         // bat """cd webhttp/
+        //         // mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"""
+        //         script {
+        //             // Run the JMeter tests on the VM using the Maven project
+        //             bat '''
+        //                 gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="cd /home/Rohit/jmeter-project/webhttp; \
+        //                 mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} verify"
+        //             '''
+        //         }
+        //     }
+        
+        //     post {
+        //         // If Maven was able to run the tests archive jtl and graphs
+        //         success {
+        //             // copy required files to a new directory - written inside script block as groovy code is present
+        //             // $ notation works probably because bat commands are inside """ instead of '''. havent tested though.
+        //             script{
+        //                 def targetDir = "${WORKSPACE}\\webhttp\\target\\allArtifacts"
+        //                 bat """ 
+        //                     mkdir ${targetDir} ^
+        //                     && gcloud compute scp --recurse %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/results ${targetDir} --zone=%ZONE% ^
+        //                     && gcloud compute scp --recurse %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/reports ${targetDir} --zone=%ZONE%
+        //                 """
+                    
+        //             // def targetDir = "**/webhttp/target/allArtifacts"
+        //             // bat """ mkdir ${targetDir}
+        //             // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${targetDir} /s
+        //             // xcopy ${WORKSPACE}/webhttp/target/jmeter/reports/ ${targetDir} /s"""
+                    
+        //             // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${WORKSPACE}/webhttp/target/allArtifacts /s
+                    
+                    
+        //             // zip zipFile: "allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "webhttp/target/jmeter/results/"
+        //                 // zip zipFile: "**\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"
+        //                 zip zipFile: "${WORKSPACE}\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"    
+                    
+        //                 archiveArtifacts "webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip"
+        //             }
+        //             // archiveArtifacts '**/webhttp/target/jmeter/results/'
+
+        //             // script {
+        //             // // Copy the JMeter results from the VM back to Jenkins
+        //             // bat '''
+        //             //     gcloud compute scp %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/results/* ./results_hello --zone=%ZONE%
+        //             // '''
+        //             // // Archive the results as Jenkins artifacts
+        //             // archiveArtifacts artifacts: 'results_hello/*', allowEmptyArchive: true
+        //             // }                    
+        //         }
+        //     }
+        // }
         
         // stage('publish-performance-trend-report'){
         //     steps{
