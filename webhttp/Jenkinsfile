@@ -145,20 +145,48 @@ pipeline {
         //     }
         // }
 
-        stage('Install and Configure Jmeter') {
+        // stage('Install and Configure Jmeter') {
+        //     steps {
+        //         script {
+        //             def lgInstances = ['jenkins-ubuntu-lg1']
+        //             // def setupScript =  '''
+        //             //     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
+        //             //     tar -xvzf apache-jmeter-5.6.3.tgz;
+        //             // '''
+
+        //             // loop through each instance and install jmeter
+        //             for(instance in lgInstances){
+        //                 bat '''
+        //                 gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="\
+        //                 wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
+        //                 tar -xvzf apache-jmeter-5.6.3.tgz;"
+        //             '''
+        //             }
+                    
+        //         }
+        //     }
+        // }
+
+        stage('Start jmeter-server on load gens instances') {
             steps {
-                script {
+                
+            }
+        }
+
+        stage('add remote hosts to controller user.prop file') {
+            steps {
+                script{
                     def lgInstances = ['jenkins-ubuntu-lg1']
-                    // def setupScript =  '''
-                    //     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
-                    //     tar -xvzf apache-jmeter-5.6.3.tgz;
-                    // '''
-                    bat '''
-                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="\
-                        wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
-                        tar -xvzf apache-jmeter-5.6.3.tgz;"
-                    '''
-                }
+                    for(instance in lgInstances){
+                        def externalIp = bat(script: "gcloud compute instances describe ${instance} --zone=${zone} --format='get(networkInterfaces[0].accessConfigs[0].natIP)'", returnStdout: true).trim()
+                        def internalIp = bat(script: "gcloud compute instances describe ${instance} --zone=${zone} --format='get(networkInterfaces[0].networkIP)'", returnStdout: true).trim()
+                        bat '''
+                            echo "${externalIp} - ${internalIp}" ^
+                            && ping ${externalIp}
+                        '''
+                    }
+                    
+                }                
             }
         }
         
