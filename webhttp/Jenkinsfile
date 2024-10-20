@@ -198,7 +198,7 @@ pipeline {
                     }
 
                     bat """
-                        cd ${WORKSPACE}/webhttp/src/test/jmeter; \
+                        cd ${WORKSPACE}\\webhttp\\src\\test\\jmeter; \
                         printf " " >> file.txt; \
                         printf "### added remote hosts" >> file.txt; \
                         printf "remote_hosts=${ipList}" >> file.txt; \
