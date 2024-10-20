@@ -17,8 +17,9 @@ pipeline {
         IMAGE_PROJECT = 'ubuntu-os-cloud' // fetch from: gcloud compute images list
         SERVICE_ACCOUNT_KEY = credentials('gcloud-svc-account') // Service account credentials from Jenkins
         CLIENT_EMAIL = 'sdet101@rugged-sunbeam-438811-a1.iam.gserviceaccount.com'
-        // INSTANCE_NAME = 'jenkins-ubuntu-test-instance'
-        INSTANCE_NAME = 'jenkins-ubuntu-lg1'
+        CONTROLLER_NAME = 'jenkins-ubuntu-test-instance'
+        LG1_NAME = 'jenkins-ubuntu-lg1'
+        LG2_NAME = 'jenkins-ubuntu-lg2'
     }
 
     // parameters {
@@ -48,43 +49,52 @@ pipeline {
             }
         }
 
-        // stage('Create Linux Compute Instance') {
-        //     steps {
-        //         script {
-        //             // Create a new Linux Compute Engine instance
-        //             bat '''
-        //                 gcloud compute instances create %INSTANCE_NAME% ^
-        //                 --zone=%ZONE% ^
-        //                 --machine-type=%MACHINE_TYPE% ^
-        //                 --image-family=%IMAGE_FAMILY% ^
-        //                 --image-project=%IMAGE_PROJECT% ^
-        //                 --boot-disk-size=100GB ^
-        //                 --metadata ubuntu-startup-script-ps1="Write-Host \\"Instance startup complete\\""
-        //             '''
-        //         }
-        //     }
-        // }
+        stage('Create Linux Compute Instance') {
+            steps {
+                script {
+                    // Create a new Linux Compute Engine instance (Controller)
+                    bat '''
+                        gcloud compute instances create %CONTROLLER_NAME% ^
+                        --zone=%ZONE% ^
+                        --machine-type=%MACHINE_TYPE% ^
+                        --image-family=%IMAGE_FAMILY% ^
+                        --image-project=%IMAGE_PROJECT% ^
+                        --boot-disk-size=100GB ^
+                        --metadata ubuntu-startup-script-ps1="Write-Host \\"Instance startup complete\\""
+                    '''
+                    // Create a new Linux Compute Engine instance (Load generators)
+                    bat '''
+                        gcloud compute instances create %LG1_NAME% %LG2_NAME% ^
+                        --zone=%ZONE% ^
+                        --machine-type=%MACHINE_TYPE% ^
+                        --image-family=%IMAGE_FAMILY% ^
+                        --image-project=%IMAGE_PROJECT% ^
+                        --boot-disk-size=100GB ^
+                        --metadata ubuntu-startup-script-ps1="Write-Host \\"Instance startup complete\\""
+                    '''
+                    sleep 60 // wait time
+                }
+            }
+        }
 
         // stage('Start compute instance') {
         //     steps {
         //         script {
-        //             // SSH into the Windows instance and run the command to display gcloud version
+        //             // start VMs if created but in stopped state
         //             bat '''
-        //                 gcloud compute instances start %INSTANCE_NAME% --zone=%ZONE%
+        //                 gcloud compute instances start %CONTROLLER_NAME% %LG1_NAME% %LG2_NAME% --zone=%ZONE%
         //             '''
         //         }
         //     }
         // }
 
-        // stage('Find out who is SSHing to vm') {
-        //     steps {
-        //         script {
-        //             bat '''
-        //                 gcloud compute ssh jenkins-windows-test-instance
-        //             '''
-        //         }
-        //     }
-        // } //ROHIT is doing it
+        stage {
+            steps {
+                script {
+
+                }
+            }
+        }
         
         // stage('Run Command on Linux Instance') {
         //     steps {
@@ -199,10 +209,10 @@ pipeline {
 
                     bat """
                         cd ${WORKSPACE}\\webhttp\\src\\test\\jmeter ^
-                        && echo. >> file.txt ^
-                        && echo ### added remote hosts >> file.txt ^
-                        && echo remote_hosts=${ipList} >> file.txt ^
-                        && echo. >> file.txt
+                        && echo. >> user.properties ^
+                        && echo ### added remote hosts >> user.properties ^
+                        && echo remote_hosts=${ipList} >> user.properties ^
+                        && echo. >> user.properties
                     """            
                 }                
             }
