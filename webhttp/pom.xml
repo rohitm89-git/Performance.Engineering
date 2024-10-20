@@ -71,6 +71,12 @@
 
                         </arguments>
                     </jMeterProcessJVMSettings>
+
+                    <remoteConfig>
+                        <startServersBeforeTests>true</startServersBeforeTests>
+                        <serverList>34.131.11.118,34.131.133.90</serverList>
+                        <stopServersAfterTests>true</stopServersAfterTests>
+                    </remoteConfig>
                 </configuration>
 
                 <executions>
