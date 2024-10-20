@@ -74,6 +74,7 @@
 
                     <remoteConfig>
                         <enable>true</enable>
+                        <remoteStartAll>true</remoteStartAll>
                     </remoteConfig>
                 </configuration>
 
