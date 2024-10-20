@@ -180,15 +180,13 @@ pipeline {
                     for(instance in lgInstances){
                         def externalIp = bat(script: """@echo off ^ 
                         gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"""", returnStdout: true).trim();
-                        sleep 10
                         def internalIp = bat(script: """@echo off ^
                         gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].networkIP)\"""", returnStdout: true).trim();
                         // def internalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].networkIP)\""""
                         // def externalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\""""
-                        sleep 10
                         bat """
                             echo \"${externalIp} - ${internalIp}\"; \
-                            ping \"${externalIp}\";
+                            ping ${externalIp} >> 1.txt;
                         """
                     }                    
                 }                
@@ -264,9 +262,9 @@ pipeline {
         // }
     }
 
-    post {
-            always {
-                cleanWs(deleteDirs: true, patterns: [[pattern: 'webhttp/target/allArtifacts*', type: 'INCLUDE']])
-            }
-        }
+    // post {
+    //         always {
+    //             cleanWs(deleteDirs: true, patterns: [[pattern: 'webhttp/target/allArtifacts*', type: 'INCLUDE']])
+    //         }
+    //     }
 }
