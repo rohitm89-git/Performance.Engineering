@@ -188,7 +188,7 @@ pipeline {
                     // loop through each instance and install jmeter
                     for(instance in lgInstances) {
                         bat """
-                            gcloud compute ssh ${instance} --zone=${ZONE} --command=\"\
+                            gcloud compute ssh ${instance} --zone=${ZONE} --command="\
                             wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
                             tar -xvzf apache-jmeter-5.6.3.tgz; \
                             cd ~/apache-jmeter-5.6.3/bin; \
@@ -196,7 +196,7 @@ pipeline {
                             echo ### disabling ssl for rmi >> user.properties; \
                             echo server.rmi.ssl.disable=true >> user.properties; \
                             echo $\"\" >> user.properties; \
-                            sh jmeter-server\"
+                            sh jmeter-server"
                         """
 
                         
