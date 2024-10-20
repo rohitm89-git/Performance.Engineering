@@ -198,8 +198,8 @@ pipeline {
                     }
 
                     bat """
-                        cd ${WORKSPACE}/webhttp/src/test/jmeter
-                        cat << EOF >> 1.txt;
+                        cd ${WORKSPACE}/webhttp/src/test/jmeter; \
+                        cat << EOF >> 1.txt; \
 
                         ### added remote hosts
                         remote_hosts=${ipList}
