@@ -65,16 +65,16 @@ pipeline {
         //     }
         // }
 
-        stage('Start compute instance') {
-            steps {
-                script {
-                    // SSH into the Windows instance and run the command to display gcloud version
-                    bat '''
-                        gcloud compute instances start %INSTANCE_NAME% --zone=%ZONE%
-                    '''
-                }
-            }
-        }
+        // stage('Start compute instance') {
+        //     steps {
+        //         script {
+        //             // SSH into the Windows instance and run the command to display gcloud version
+        //             bat '''
+        //                 gcloud compute instances start %INSTANCE_NAME% --zone=%ZONE%
+        //             '''
+        //         }
+        //     }
+        // }
 
         // stage('Find out who is SSHing to vm') {
         //     steps {
@@ -126,34 +126,37 @@ pipeline {
         //     }
         // }
 
-        stage('Install Dependencies on VM') { // this step failed though installations were successful. need to add checks.
-            steps {
-                script {
-                    // SSH into the VM and install Maven, Java, JMeter
-                    // catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                    bat '''
-                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="sudo apt-get update; \
-                        sudo apt install openjdk-11-jdk; \
-                        java --version; \
-                        sudo apt install maven -y; \
-                        mvn --version"
-                    '''
-                            // wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.5.tgz;
-                            // tar -xvzf apache-jmeter-5.5.tgz;"
-                    // }
-                }
-            }
-        }
+        // stage('Install Dependencies on VM') { // this step failed though installations were successful. need to add checks.
+        //     steps {
+        //         script {
+        //             // SSH into the VM and install Maven, Java, JMeter
+        //             // catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+        //             bat '''
+        //                 gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="sudo apt-get update; \
+        //                 sudo apt install openjdk-11-jdk; \
+        //                 java --version; \
+        //                 sudo apt install maven -y; \
+        //                 mvn --version"
+        //             '''
+        //                     // wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.5.tgz;
+        //                     // tar -xvzf apache-jmeter-5.5.tgz;"
+        //             // }
+        //         }
+        //     }
+        // }
 
         stage('Install and Configure Jmeter') {
             steps {
                 script {
-                    def setupScript =  '''
-                        wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
-                        tar -xvzf apache-jmeter-5.6.3.tgz;
-                    '''
+                    def lgInstances = ['jenkins-ubuntu-lg1']
+                    // def setupScript =  '''
+                    //     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
+                    //     tar -xvzf apache-jmeter-5.6.3.tgz;
+                    // '''
                     bat '''
-                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="${setupScript}"
+                        gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="\
+                        wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
+                        tar -xvzf apache-jmeter-5.6.3.tgz;"
                     '''
                 }
             }
