@@ -187,11 +187,19 @@ pipeline {
 
                     // loop through each instance and install jmeter
                     for(instance in lgInstances) {
+                        // bat """
+                        //     gcloud compute ssh ${instance} --zone=${ZONE} --command="\
+                        //     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
+                        //     tar -xvzf apache-jmeter-5.6.3.tgz; \
+                        //     cd ~/apache-jmeter-5.6.3/bin; \
+                        //     echo ### disabling ssl for rmi >> user.properties; \
+                        //     echo server.rmi.ssl.disable=true >> user.properties; \
+                        //     sh jmeter-server"
+                        // """
+
                         bat """
                             gcloud compute ssh ${instance} --zone=${ZONE} --command="\
-                            wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
-                            tar -xvzf apache-jmeter-5.6.3.tgz; \
-                            cd ~/apache-jmeter-5.6.3/bin; \
+                            cd apache-jmeter-5.6.3/bin; \
                             echo ### disabling ssl for rmi >> user.properties; \
                             echo server.rmi.ssl.disable=true >> user.properties; \
                             sh jmeter-server"
@@ -279,7 +287,7 @@ pipeline {
                     // Run the JMeter tests on the VM using the Maven project
                     bat '''
                         gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd /home/Rohit/jmeter-project/webhttp; \
-                        mvn -Djmeterengine.remote.start=true -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"
+                        mvn -Djmeterengine.remote.start=true -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} verify"
                     '''
                 }
             }
