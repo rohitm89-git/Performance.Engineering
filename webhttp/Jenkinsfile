@@ -178,10 +178,10 @@ pipeline {
                 script{
                     def lgInstances = ['jenkins-ubuntu-lg1']
                     for(instance in lgInstances){
-                        // def externalIp = bat(script: "gcloud compute instances describe ${instance} --zone=${zone} --format='get(networkInterfaces[0].accessConfigs[0].natIP)'", returnStdout: true).trim()
-                        // def internalIp = bat(script: "gcloud compute instances describe ${instance} --zone=${zone} --format='get(networkInterfaces[0].networkIP)'", returnStdout: true).trim()
-                        def internalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].networkIP)\""""
-                        def externalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\""""
+                        def externalIp = bat(script: "gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"", returnStdout: true).trim()
+                        def internalIp = bat(script: "gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].networkIP)\"", returnStdout: true).trim()
+                        // def internalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].networkIP)\""""
+                        // def externalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\""""
                         bat """
                             echo ${externalIp} - ${internalIp}; \
                             ping ${externalIp};
