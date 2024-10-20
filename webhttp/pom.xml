@@ -73,10 +73,18 @@
                         </arguments>
                     </jMeterProcessJVMSettings>
 
+                    <testFilesDirectory>${project.basedir}/webhttp/src/test/jmeter</testFilesDirectory>
+                    <resultsDirectory>${project.basedir}/webhttp/target/jmeter/results</resultsDirectory>
+
                     <remoteConfig>
                         <enable>true</enable>
                         <remoteStartAll>true</remoteStartAll>
                     </remoteConfig>
+
+                    <properties>
+                        <jmeter.test.file>testFiles/blazeDemo.jmx</jmeter.test.file> <!-- Specify the JMX file -->
+                        <remote_hosts>10.190.0.6,10.190.0.7</remote_hosts> <!-- Use property for remote hosts -->
+                    </properties>
                 </configuration>
 
                 <executions>
