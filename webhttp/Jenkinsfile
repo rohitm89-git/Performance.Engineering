@@ -202,7 +202,7 @@ pipeline {
                             cd /home/Rohit/apache-jmeter-5.6.3/bin; \
                             echo '### disabling ssl for rmi' >> user.properties; \
                             echo 'server.rmi.ssl.disable=true' >> user.properties; \
-                            nohup ./jmeter-server > jmeter-server.log 2>&1 &"
+                            nohup ./jmeter-server > jmeter-server-run.log 2>&1 &"
                         """
 
                         
