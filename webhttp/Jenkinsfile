@@ -167,11 +167,11 @@ pipeline {
         //     }
         // }
 
-        stage('Start jmeter-server on load gens instances') {
-            steps {
+        // stage('Start jmeter-server on load gens instances') {
+        //     steps {
                 
-            }
-        }
+        //     }
+        // }
 
         stage('add remote hosts to controller user.prop file') {
             steps {
