@@ -292,6 +292,23 @@ pipeline {
         //         }                
         //     }
         // }
+
+        stage('jmeter-test-run') {
+            steps {
+                // Run Maven on a Windows agent.
+                // bat """cd webhttp/
+                // mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"""
+                script {
+                    // Run the JMeter tests on the VM using the Maven project
+                    bat '''
+                        gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd /home/Rohit/jmeter-project/webhttp; \
+                        mvn clean verify"
+                    '''
+                }
+            }
+        
+            
+        }
         
         stage('execute-distributed-load-test'){
             steps {
@@ -302,23 +319,7 @@ pipeline {
                     '''
                 }
             }
-        }
-        
-        
-        stage('jmeter-test-run') {
-            steps {
-                // Run Maven on a Windows agent.
-                // bat """cd webhttp/
-                // mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"""
-                script {
-                    // Run the JMeter tests on the VM using the Maven project
-                    bat '''
-                        gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd /home/Rohit/jmeter-project/webhttp; \
-                        mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} verify"
-                    '''
-                }
-            }
-        
+
             post {
                 // If Maven was able to run the tests archive jtl and graphs
                 success {
@@ -365,6 +366,9 @@ pipeline {
                 }
             }
         }
+        
+        
+        
         
         // stage('publish-performance-trend-report'){
         //     steps{
