@@ -298,7 +298,7 @@ pipeline {
                 script {
                     bat '''
                         gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd ~/apache-jmeter-5.6.3/bin; \
-                        jmeter -n -t ~/jmeter-project/webhttp/target/jmeter/testFiles/blazeDemo.jmx -r -l ~/jmeter-project/webhttp/target/jmeter/results/results.csv -e -o ~/jmeter-project/webhttp/target/jmeter/reports/TestReport/"
+                        ./jmeter.sh -n -t ~/jmeter-project/webhttp/target/jmeter/testFiles/blazeDemo.jmx -r -l ~/jmeter-project/webhttp/target/jmeter/results/results.csv -e -o ~/jmeter-project/webhttp/target/jmeter/reports/TestReport/"
                     '''
                 }
             }
