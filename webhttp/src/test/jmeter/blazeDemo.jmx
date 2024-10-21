@@ -11,7 +11,7 @@
     <hashTree>
       <ConfigTestElement guiclass="PropertyControlGui" testclass="ConfigTestElement" testname="Property Display"/>
       <hashTree/>
-      <Arguments guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+      <Arguments guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
         <collectionProp name="Arguments.arguments">
           <elementProp name="threads.count" elementType="Argument">
             <stringProp name="Argument.name">threads.count</stringProp>
@@ -39,7 +39,7 @@
         </collectionProp>
       </Arguments>
       <hashTree/>
-      <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
+      <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults">
         <stringProp name="HTTPSampler.domain">blazedemo.com</stringProp>
         <stringProp name="HTTPSampler.port">443</stringProp>
         <stringProp name="HTTPSampler.protocol">https</stringProp>
@@ -49,7 +49,7 @@
         <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
       </ConfigTestElement>
       <hashTree/>
-      <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager" enabled="true">
+      <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager">
         <collectionProp name="HeaderManager.headers">
           <elementProp name="Sec-Fetch-Mode" elementType="Header">
             <stringProp name="Header.name">Sec-Fetch-Mode</stringProp>
@@ -94,7 +94,7 @@
         </collectionProp>
       </HeaderManager>
       <hashTree/>
-      <CookieManager guiclass="CookiePanel" testclass="CookieManager" testname="HTTP Cookie Manager" enabled="true">
+      <CookieManager guiclass="CookiePanel" testclass="CookieManager" testname="HTTP Cookie Manager">
         <collectionProp name="CookieManager.cookies"/>
         <boolProp name="CookieManager.clearEachIteration">true</boolProp>
         <boolProp name="CookieManager.controlledByThreadGroup">false</boolProp>
@@ -241,12 +241,12 @@ OUT.println(&quot;successfully found all files&quot;)
         <hashTree/>
       </hashTree>
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Thread Group">
-        <stringProp name="ThreadGroup.num_threads">${threads.count}</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">${rampup.duration}</stringProp>
+        <stringProp name="ThreadGroup.num_threads">${__P(threads.count,1)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(rampup.duration,2)}</stringProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
         <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller">
-          <stringProp name="LoopController.loops">${loop.count}</stringProp>
+          <stringProp name="LoopController.loops">${__P(loop.count,1)}</stringProp>
           <boolProp name="LoopController.continue_forever">false</boolProp>
         </elementProp>
       </ThreadGroup>
@@ -255,7 +255,7 @@ OUT.println(&quot;successfully found all files&quot;)
           <boolProp name="TransactionController.includeTimers">false</boolProp>
         </TransactionController>
         <hashTree>
-          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="/" enabled="true">
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="/">
             <boolProp name="HTTPSampler.concurrentDwn">true</boolProp>
             <stringProp name="HTTPSampler.path">/</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
@@ -450,7 +450,7 @@ log.info(&quot;Selected city is :&quot;+vars.get(&quot;departingCity&quot;));
           </ConstantThroughputTimer>
           <hashTree/>
         </hashTree>
-        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="find_flights" enabled="true">
+        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="find_flights">
           <boolProp name="TransactionController.includeTimers">false</boolProp>
         </TransactionController>
         <hashTree>
@@ -808,13 +808,13 @@ log.info(&quot;Selected city is :&quot;+vars.get(&quot;departingCity&quot;));
             <hashTree/>
           </hashTree>
         </hashTree>
-        <DebugSampler guiclass="TestBeanGUI" testclass="DebugSampler" testname="Debug Sampler">
+        <DebugSampler guiclass="TestBeanGUI" testclass="DebugSampler" testname="Debug Sampler" enabled="true">
           <boolProp name="displayJMeterProperties">false</boolProp>
           <boolProp name="displayJMeterVariables">true</boolProp>
           <boolProp name="displaySystemProperties">false</boolProp>
         </DebugSampler>
         <hashTree/>
-        <TestAction guiclass="TestActionGui" testclass="TestAction" testname="Flow Control Action">
+        <TestAction guiclass="TestActionGui" testclass="TestAction" testname="Flow Control Action" enabled="true">
           <intProp name="ActionProcessor.action">1</intProp>
           <intProp name="ActionProcessor.target">0</intProp>
           <stringProp name="ActionProcessor.duration">2000</stringProp>
@@ -832,7 +832,7 @@ log.info(&quot;Selected city is :&quot;+vars.get(&quot;departingCity&quot;));
         </elementProp>
       </ThreadGroup>
       <hashTree>
-        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="JSR223 Sampler">
+        <JSR223Sampler guiclass="TestBeanGUI" testclass="JSR223Sampler" testname="JSR223 Sampler" enabled="true">
           <stringProp name="scriptLanguage">groovy</stringProp>
           <stringProp name="parameters"></stringProp>
           <stringProp name="filename"></stringProp>
@@ -1417,7 +1417,7 @@ without actual network activity. This helps debugging tests.</stringProp>
             </elementProp>
           </collectionProp>
         </elementProp>
-        <stringProp name="classname">io.github.mderevyankoaqa.influxdb2.visualizer.InfluxDatabaseBackendListenerClient</stringProp>
+        <stringProp name="classname">org.apache.jmeter.visualizers.backend.graphite.GraphiteBackendListenerClient</stringProp>
       </BackendListener>
       <hashTree/>
       <ResultCollector guiclass="StatVisualizer" testclass="ResultCollector" testname="Aggregate Report" enabled="false">
