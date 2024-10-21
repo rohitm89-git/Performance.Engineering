@@ -24,8 +24,8 @@
             <plugin>
                 <groupId>com.lazerycode.jmeter</groupId>
                 <artifactId>jmeter-maven-plugin</artifactId>
-                <version>3.8.0</version>
-                <!-- <version>2.9.0</version> -->
+                <!-- <version>3.8.0</version> -->
+                <version>2.9.0</version>
                 <!-- <version>3.3.0</version> -->
 
                 <configuration>
@@ -73,18 +73,21 @@
                         </arguments>
                     </jMeterProcessJVMSettings>
 
-                    <testFilesDirectory>${project.basedir}/webhttp/src/test/jmeter</testFilesDirectory>
-                    <resultsDirectory>${project.basedir}/webhttp/target/jmeter/results</resultsDirectory>
+                    <!-- <testFilesDirectory>${project.basedir}/webhttp/src/test/jmeter</testFilesDirectory>
+                    <resultsDirectory>${project.basedir}/webhttp/target/jmeter/results</resultsDirectory> -->
 
                     <remoteConfig>
                         <enable>true</enable>
                         <remoteStartAll>true</remoteStartAll>
+                        <!-- <startServersBeforeTests>true</startServersBeforeTests> -->
+                        <!-- <serverList>192.168.4.6</serverList>-->
+                        <!-- <stopServersAfterTests>true</stopServersAfterTests> -->
                     </remoteConfig>
 
-                    <properties>
-                        <jmeter.test.file>testFiles/blazeDemo.jmx</jmeter.test.file> <!-- Specify the JMX file -->
-                        <remote_hosts>10.190.0.6,10.190.0.7</remote_hosts> <!-- Use property for remote hosts -->
-                    </properties>
+                    <!-- <properties>
+                        <jmeter.test.file>testFiles/blazeDemo.jmx</jmeter.test.file>
+                        <remote_hosts>10.190.0.6,10.190.0.7</remote_hosts>
+                    </properties> -->
                 </configuration>
 
                 <executions>

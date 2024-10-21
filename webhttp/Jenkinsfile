@@ -94,57 +94,57 @@ pipeline {
             }
         }
 
-        // stage('Add LGs as remote host in jenkins workspace user.prop file') {
-        //     steps {
-        //         script{
-        //             // def lgInstances = ['jenkins-ubuntu-lg1']
-        //             def lgInstances = [env.LG1_NAME, env.LG2_NAME]
-        //             def externalIp, internalIp
-        //             def ipList = ""
-        //             for(instance in lgInstances){
-        //                 externalIp = bat(script: """@gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"""", returnStdout: true).trim() // @ is needed to get only o/p of command
-        //                 internalIp = bat(script: """@gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].networkIP)\"""", returnStdout: true).trim()
-        //                 // def internalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].networkIP)\"""" // direct bat does not save output to groovy variable
-        //                 // def externalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"""" // direct bat does not save output to groovy variable
+        stage('Add LGs as remote host in jenkins workspace user.prop file') {
+            steps {
+                script{
+                    // def lgInstances = ['jenkins-ubuntu-lg1']
+                    def lgInstances = [env.LG1_NAME, env.LG2_NAME]
+                    def externalIp, internalIp
+                    def ipList = ""
+                    for(instance in lgInstances){
+                        externalIp = bat(script: """@gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"""", returnStdout: true).trim() // @ is needed to get only o/p of command
+                        internalIp = bat(script: """@gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].networkIP)\"""", returnStdout: true).trim()
+                        // def internalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].networkIP)\"""" // direct bat does not save output to groovy variable
+                        // def externalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"""" // direct bat does not save output to groovy variable
                         
-        //                 // bat """
-        //                 //     echo '${externalIp} - ${internalIp}'; \
-        //                 //     ping ${externalIp} >> 2.txt;
-        //                 // """
+                        // bat """
+                        //     echo '${externalIp} - ${internalIp}'; \
+                        //     ping ${externalIp} >> 2.txt;
+                        // """
 
-        //                 ipList = ipList + externalIp + ","
+                        ipList = ipList + externalIp + ","
 
-        //                 bat """
-        //                     ping ${externalIp}
-        //                 """
-        //             }
+                        bat """
+                            ping ${externalIp}
+                        """
+                    }
 
-        //             bat """
-        //                 cd ${WORKSPACE}\\webhttp\\src\\test\\jmeter ^
-        //                 && echo. >> user.properties ^
-        //                 && echo ### added remote hosts >> user.properties ^
-        //                 && echo remote_hosts=${ipList} >> user.properties ^
-        //                 && echo. >> user.properties
-        //             """            
-        //         }   
-        //     }
-        // }
+                    bat """
+                        cd ${WORKSPACE}\\webhttp\\src\\test\\jmeter ^
+                        && echo. >> user.properties ^
+                        && echo ### added remote hosts >> user.properties ^
+                        && echo remote_hosts=${ipList} >> user.properties ^
+                        && echo. >> user.properties
+                    """            
+                }   
+            }
+        }
 
-        // stage('Copy maven project to Controller VM') {
-        //     steps {
-        //         script {
-        //             // Copy the checked out project to the VM
-        //             // sh '''
-        //             //     gcloud compute scp -r ./* ${INSTANCE_NAME}:~/maven-project --zone=${ZONE}
-        //             // '''
-        //             bat '''
-        //                 gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="mkdir jmeter-project" ^
-        //                 && echo %WORKSPACE% ^
-        //                 && gcloud compute scp --recurse "%WORKSPACE%\\webhttp" %CONTROLLER_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
-        //             '''
-        //         }
-        //     }
-        // }
+        stage('Copy maven project to Controller VM') {
+            steps {
+                script {
+                    // Copy the checked out project to the VM
+                    // sh '''
+                    //     gcloud compute scp -r ./* ${INSTANCE_NAME}:~/maven-project --zone=${ZONE}
+                    // '''
+                    bat '''
+                        gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="mkdir jmeter-project" ^
+                        && echo %WORKSPACE% ^
+                        && gcloud compute scp --recurse "%WORKSPACE%\\webhttp" %CONTROLLER_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
+                    '''
+                }
+            }
+        }
 
         // stage('Install Dependencies on Controller and LGs') {
         //     steps {
