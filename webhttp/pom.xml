@@ -24,10 +24,9 @@
             <plugin>
                 <groupId>com.lazerycode.jmeter</groupId>
                 <artifactId>jmeter-maven-plugin</artifactId>
-                <version>3.5.0</version>
-                <!-- <version>3.8.0</version> -->
-                <!-- <version>2.9.0</version> -->
+                <version>2.9.0</version>
                 <!-- <version>3.3.0</version> -->
+                <!-- <version>3.8.0</version> -->
 
                 <configuration>
                     <jmeterVersion>5.6.3</jmeterVersion>
@@ -40,7 +39,6 @@
                         <artifact>kg.apc:jmeter-plugins-casutg:2.10</artifact>
                         <artifact>io.github.mderevyankoaqa:jmeter-plugins-influxdb2-listener:2.8</artifact>
                         <!--<artifact>kg.apc:jmeter-plugins-cmd:2.2</artifact> -->
-                        <artifact>kg.apc:jmeter-plugins-standard:1.4.0</artifact>
                     </jmeterExtensions>
 
                     <downloadExtensionDependencies>true</downloadExtensionDependencies>
@@ -75,23 +73,23 @@
                         </arguments>
                     </jMeterProcessJVMSettings>
 
-                    <testFilesDirectory>${project.basedir}/src/test/jmeter</testFilesDirectory>
+                    <!-- <testFilesDirectory>${project.basedir}/src/test/jmeter</testFilesDirectory>
                     <resultsDirectory>${project.basedir}/target/jmeter/results</resultsDirectory>
-                    <propertiesUserFile>${project.basedir}/src/test/jmeter/user.properties</propertiesUserFile>
+                    <propertiesUserFile>${project.basedir}/src/test/jmeter/user.properties</propertiesUserFile> -->
                     <!-- <propertiesUserFile>${basedir}/src/test/jmeter/user.properties</propertiesUserFile> -->
 
-                    <RemoteConfiguration>
-                        <enable>true</enable>
-                        <remoteStartAll>true</remoteStartAll>
+                    <!-- <RemoteConfiguration> -->
+                        <!-- <enable>true</enable>
+                        <remoteStartAll>true</remoteStartAll> -->
                         <!-- <startServersBeforeTests>true</startServersBeforeTests> -->
                         <!-- <serverList>192.168.4.6</serverList>-->
                         <!-- <stopServersAfterTests>true</stopServersAfterTests> -->
-                    </RemoteConfiguration>
+                    <!-- </RemoteConfiguration> -->
 
-                    <properties>
+                    <!-- <properties>
                         <jmeter.test.file>testFiles/blazeDemo.jmx</jmeter.test.file>
                         <remote_hosts>10.190.0.6,10.190.0.7</remote_hosts>
-                    </properties>
+                    </properties> -->
                 </configuration>
 
                 <executions>
@@ -103,13 +101,13 @@
                         </goals>
                     </execution>
                     <!-- run jmeter tests-->
-                    <execution>
+                    <!-- <execution>
                         <id>jmeter-tests</id>
                         <phase>verify</phase>
                         <goals>
                             <goal>jmeter</goal>
                         </goals>
-                    </execution>
+                    </execution> -->
                     <!--fail build on errors in test-->
                     <execution>
                         <id>check-jmeter-results</id>

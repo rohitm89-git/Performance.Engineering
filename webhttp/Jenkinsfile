@@ -137,13 +137,10 @@ pipeline {
                     // sh '''
                     //     gcloud compute scp -r ./* ${INSTANCE_NAME}:~/maven-project --zone=${ZONE}
                     // '''
-                    // bat '''
-                    //     gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="mkdir jmeter-project" ^
-                    //     && echo %WORKSPACE% ^
-                    //     && gcloud compute scp --recurse "%WORKSPACE%\\webhttp" %CONTROLLER_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
-                    // '''
                     bat '''
-                        gcloud compute scp --recurse "%WORKSPACE%\\webhttp" %CONTROLLER_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
+                        gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="mkdir -p jmeter-project" ^
+                        && echo %WORKSPACE% ^
+                        && gcloud compute scp --recurse "%WORKSPACE%\\webhttp" %CONTROLLER_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
                     '''
                 }
             }
@@ -178,53 +175,62 @@ pipeline {
         //     }
         // }
 
-        // stage('Install/Configure Jmeter and start jmeter-server on LGs') {
-        //     steps {
-        //         script {
-        //             // def lgInstances = ['jenkins-ubuntu-lg1']
-        //             def lgInstances = [env.LG1_NAME,env.LG2_NAME]
-        //             // def setupScript =  '''
-        //             //     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
-        //             //     tar -xvzf apache-jmeter-5.6.3.tgz;
-        //             // '''
+        stage('Install/Configure Jmeter and start jmeter-server on LGs') {
+            steps {
+                script {
+                    // def lgInstances = ['jenkins-ubuntu-lg1']
+                    def lgInstances = [env.LG1_NAME,env.LG2_NAME]
+                    // def setupScript =  '''
+                    //     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
+                    //     tar -xvzf apache-jmeter-5.6.3.tgz;
+                    // '''
 
-        //             // loop through each instance and install jmeter
-        //             for(instance in lgInstances) {
-        //                 // bat """
-        //                 //     gcloud compute ssh ${instance} --zone=${ZONE} --command="\
-        //                 //     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
-        //                 //     tar -xvzf apache-jmeter-5.6.3.tgz; \
-        //                 //     cd ~/apache-jmeter-5.6.3/bin; \
-        //                 //     echo ### disabling ssl for rmi >> user.properties; \
-        //                 //     echo server.rmi.ssl.disable=true >> user.properties; \
-        //                 //     sh jmeter-server"
-        //                 // """
+                    // install jmeter on controller
+                    bat """
+                            gcloud compute ssh ${CONTROLLER_NAME} --zone=${ZONE} --command="\
+                            wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
+                            tar -xvzf apache-jmeter-5.6.3.tgz; \
+                            cd ~/apache-jmeter-5.6.3/bin; \
+                            cp -f ~/jmeter-project/webhttp/src/test/jmeter/user.properties ./"
+                        """
 
-        //                 // bat """
-        //                 //     gcloud compute ssh ${instance} --zone=${ZONE} --command="\
-        //                 //     cd /home/Rohit/apache-jmeter-5.6.3/bin; \
-        //                 //     echo '### disabling ssl for rmi' >> user.properties; \
-        //                 //     echo 'server.rmi.ssl.disable=true' >> user.properties; \
-        //                 //     nohup ./jmeter-server > jmeter-server-run.log 2>&1 &"
-        //                 // """
+                    // loop through each lg instance - install jmeter and start jmeter-server
+                    // for(instance in lgInstances) {
+                    //     // bat """
+                    //     //     gcloud compute ssh ${instance} --zone=${ZONE} --command="\
+                    //     //     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
+                    //     //     tar -xvzf apache-jmeter-5.6.3.tgz; \
+                    //     //     cd ~/apache-jmeter-5.6.3/bin; \
+                    //     //     echo ### disabling ssl for rmi >> user.properties; \
+                    //     //     echo server.rmi.ssl.disable=true >> user.properties; \
+                    //     //     sh jmeter-server"
+                    //     // """
 
-        //                 bat """
-        //                     gcloud compute ssh ${instance} --zone=${ZONE} --command="\
-        //                     cd /home/Rohit/apache-jmeter-5.6.3/bin; \
-        //                     nohup ./jmeter-server > jmeter-server-run.log 2>&1 &"
-        //                 """
+                    //     // bat """
+                    //     //     gcloud compute ssh ${instance} --zone=${ZONE} --command="\
+                    //     //     cd /home/Rohit/apache-jmeter-5.6.3/bin; \
+                    //     //     echo '### disabling ssl for rmi' >> user.properties; \
+                    //     //     echo 'server.rmi.ssl.disable=true' >> user.properties; \
+                    //     //     nohup ./jmeter-server > jmeter-server-run.log 2>&1 &"
+                    //     // """
+
+                    //     bat """
+                    //         gcloud compute ssh ${instance} --zone=${ZONE} --command="\
+                    //         cd /home/Rohit/apache-jmeter-5.6.3/bin; \
+                    //         nohup ./jmeter-server > jmeter-server-run.log 2>&1 &"
+                    //     """
 
                         
-        //                 // bat '''
-        //                 //     gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="\
-        //                 //     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
-        //                 //     tar -xvzf apache-jmeter-5.6.3.tgz;"
-        //                 // '''
-        //             }
+                    //     // bat '''
+                    //     //     gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="\
+                    //     //     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
+                    //     //     tar -xvzf apache-jmeter-5.6.3.tgz;"
+                    //     // '''
+                    // }
                     
-        //         }
-        //     }
-        // }
+                }
+            }
+        }
         
         // stage('Run Command on Linux Instance') {
         //     steps {
@@ -287,6 +293,18 @@ pipeline {
         //     }
         // }
         
+        stage('execute-distributed-load-test'){
+            steps {
+                script {
+                    bat '''
+                        gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd ~/apache-jmeter-5.6.3/bin; \
+                        jmeter.sh -n -t ~/jmeter-project/webhttp/target/jmeter/testFiles/blazeDemo.jmx -r -l ~/jmeter-project/webhttp/target/jmeter/results/results.csv -e -o ~/jmeter-project/webhttp/target/jmeter/reports/TestReport/"
+                    '''
+                }
+            }
+        }
+        
+        
         stage('jmeter-test-run') {
             steps {
                 // Run Maven on a Windows agent.
@@ -296,7 +314,7 @@ pipeline {
                     // Run the JMeter tests on the VM using the Maven project
                     bat '''
                         gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd /home/Rohit/jmeter-project/webhttp; \
-                        mvn -Djmeterengine.remote.start=true -Djmeterengine.remote.servers=10.190.0.6,10.190.0.7 -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} verify"
+                        mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} verify"
                     '''
                 }
             }
@@ -327,6 +345,12 @@ pipeline {
                         zip zipFile: "${WORKSPACE}\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"    
                     
                         archiveArtifacts "webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip"
+
+                        bat '''
+                            gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd ~/jmeter-project/webhttp/target/jmeter/; \
+                            rm -rf results/ reports/; \
+                            mkdir -p results/ reports/"
+                        '''
                     }
                     // archiveArtifacts '**/webhttp/target/jmeter/results/'
 
