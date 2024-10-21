@@ -41,9 +41,9 @@ pipeline {
             steps {
                 script {
                     if(env.createInstances == false){
-                        echo 'Not creating instances'
+                        echo env.createInstances
                     }else {
-                        echo 'Creating instances'
+                        echo env.createInstances
                     }
                 }
             }
