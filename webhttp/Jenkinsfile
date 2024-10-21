@@ -227,7 +227,7 @@ pipeline {
                     //         cp -f ~/jmeter-project/webhttp/src/test/jmeter/user.properties ./"
                     //     """
 
-                    if(parms.createInstances) {
+                    if(params.createInstances) {
                         // loop through each lg instance - install jmeter and add disable ssl for rmi to user.prop
                         for(instance in lgInstances) {
                             bat """
