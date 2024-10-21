@@ -37,7 +37,7 @@ pipeline {
     }
 
     stages {
-        stage {
+        stage('testing conditions') {
             steps {
                 script {
                     if(env.createInstances == false){
