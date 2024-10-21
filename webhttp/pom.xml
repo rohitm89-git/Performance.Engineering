@@ -76,13 +76,13 @@
                     <!-- <testFilesDirectory>${project.basedir}/webhttp/src/test/jmeter</testFilesDirectory>
                     <resultsDirectory>${project.basedir}/webhttp/target/jmeter/results</resultsDirectory> -->
 
-                    <remoteConfig>
+                    <RemoteConfiguration>
                         <enable>true</enable>
                         <remoteStartAll>true</remoteStartAll>
                         <!-- <startServersBeforeTests>true</startServersBeforeTests> -->
                         <!-- <serverList>192.168.4.6</serverList>-->
                         <!-- <stopServersAfterTests>true</stopServersAfterTests> -->
-                    </remoteConfig>
+                    </RemoteConfiguration>
 
                     <!-- <properties>
                         <jmeter.test.file>testFiles/blazeDemo.jmx</jmeter.test.file>
