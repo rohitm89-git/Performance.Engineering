@@ -80,13 +80,13 @@
                     <propertiesUserFile>${project.basedir}/src/test/jmeter/user.properties</propertiesUserFile>
                     <!-- <propertiesUserFile>${basedir}/src/test/jmeter/user.properties</propertiesUserFile> -->
 
-                    <remoteConfig>
+                    <RemoteConfiguration>
                         <enable>true</enable>
                         <remoteStartAll>true</remoteStartAll>
                         <!-- <startServersBeforeTests>true</startServersBeforeTests> -->
                         <!-- <serverList>192.168.4.6</serverList>-->
                         <!-- <stopServersAfterTests>true</stopServersAfterTests> -->
-                    </remoteConfig>
+                    </RemoteConfiguration>
 
                     <properties>
                         <jmeter.test.file>testFiles/blazeDemo.jmx</jmeter.test.file>
