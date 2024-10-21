@@ -40,7 +40,7 @@
                         <artifact>kg.apc:jmeter-plugins-casutg:2.10</artifact>
                         <artifact>io.github.mderevyankoaqa:jmeter-plugins-influxdb2-listener:2.8</artifact>
                         <!--<artifact>kg.apc:jmeter-plugins-cmd:2.2</artifact> -->
-                        <artifact>kg.apc:jmeter-plugins:1.4.0</artifact>
+                        <artifact>kg.apc:jmeter-plugins-standard:1.4.0</artifact>
                     </jmeterExtensions>
 
                     <downloadExtensionDependencies>true</downloadExtensionDependencies>
