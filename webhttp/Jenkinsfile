@@ -137,10 +137,13 @@ pipeline {
                     // sh '''
                     //     gcloud compute scp -r ./* ${INSTANCE_NAME}:~/maven-project --zone=${ZONE}
                     // '''
+                    // bat '''
+                    //     gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="mkdir jmeter-project" ^
+                    //     && echo %WORKSPACE% ^
+                    //     && gcloud compute scp --recurse "%WORKSPACE%\\webhttp" %CONTROLLER_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
+                    // '''
                     bat '''
-                        gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="mkdir jmeter-project" ^
-                        && echo %WORKSPACE% ^
-                        && gcloud compute scp --recurse "%WORKSPACE%\\webhttp" %CONTROLLER_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
+                        gcloud compute scp --recurse "%WORKSPACE%\\webhttp" %CONTROLLER_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
                     '''
                 }
             }
