@@ -40,10 +40,10 @@ pipeline {
         stage('testing conditions') {
             steps {
                 script {
-                    if(env.createInstances == false){
-                        echo env.createInstances
+                    if(env.createInstances){
+                        echo 'creating instances'
                     }else {
-                        echo env.createInstances
+                        echo 'not creating'
                     }
                 }
             }
