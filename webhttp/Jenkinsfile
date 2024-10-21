@@ -315,7 +315,7 @@ pipeline {
                 script {
                     bat '''
                         gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd ~/jmeter-project/webhttp/target/jmeter/bin; \
-                        java -jar ApacheJMeter-5.6.3.jar -n -t ~/jmeter-project/webhttp/src/test/jmeter/blazeDemo.jmx -r -l ~/jmeter-project/webhttp/target/jmeter/results/results.csv -e -o ~/jmeter-project/webhttp/target/jmeter/reports/TestReport/ -Jvusers=2 -JrampUp=2 -JloopCount=2"
+                        java -jar ApacheJMeter-5.6.3.jar -n -t ~/jmeter-project/webhttp/src/test/jmeter/blazeDemo.jmx -r -l ~/jmeter-project/webhttp/target/jmeter/results/results.csv -e -o ~/jmeter-project/webhttp/target/jmeter/reports/TestReport/ -Gvusers=2 -GrampUp=2 -GloopCount=2"
                     '''
                 }
             }
