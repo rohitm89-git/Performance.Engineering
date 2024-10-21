@@ -313,10 +313,15 @@ pipeline {
         stage('execute-distributed-load-test'){
             steps {
                 script {
-                    bat '''
-                        gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd ~/jmeter-project/webhttp/target/jmeter/bin; \
+                    // bat '''
+                    //     gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd ~/jmeter-project/webhttp/target/jmeter/bin; \
+                    //     java -jar ApacheJMeter-5.6.3.jar -n -t ~/jmeter-project/webhttp/src/test/jmeter/blazeDemo.jmx -r -l ~/jmeter-project/webhttp/target/jmeter/results/results.csv -e -o ~/jmeter-project/webhttp/target/jmeter/reports/TestReport/ -Gthreads.count=${threads} -Grampup.duration=${rampup} -Gloop.count=${loop}"
+                    // '''
+
+                    bat """
+                        gcloud compute ssh ${CONTROLLER_NAME} --zone=${ZONE} --command=\"cd ~/jmeter-project/webhttp/target/jmeter/bin; \
                         java -jar ApacheJMeter-5.6.3.jar -n -t ~/jmeter-project/webhttp/src/test/jmeter/blazeDemo.jmx -r -l ~/jmeter-project/webhttp/target/jmeter/results/results.csv -e -o ~/jmeter-project/webhttp/target/jmeter/reports/TestReport/ -Gthreads.count=${threads} -Grampup.duration=${rampup} -Gloop.count=${loop}"
-                    '''
+                    """
                 }
             }
 
