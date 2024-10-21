@@ -185,7 +185,7 @@ pipeline {
         //             //     tar -xvzf apache-jmeter-5.6.3.tgz;
         //             // '''
 
-        //             // install jmeter on controller
+        //             // install jmeter on controller - this wont work as plugins wont be there
         //             bat """
         //                     gcloud compute ssh ${CONTROLLER_NAME} --zone=${ZONE} --command="\
         //                     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
@@ -315,7 +315,7 @@ pipeline {
                 script {
                     bat '''
                         gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd ~/jmeter-project/webhttp/target/jmeter/bin; \
-                        java -jar ApacheJMeter-5.6.3.jar -n -t ~/jmeter-project/webhttp/src/test/jmeter/blazeDemo.jmx -r -l ~/jmeter-project/webhttp/target/jmeter/results/results.csv -e -o ~/jmeter-project/webhttp/target/jmeter/reports/TestReport/ -Gthreads.count=2 -Grampup.duration=2 -Gloop.count=2"
+                        java -jar ApacheJMeter-5.6.3.jar -n -t ~/jmeter-project/webhttp/src/test/jmeter/blazeDemo.jmx -r -l ~/jmeter-project/webhttp/target/jmeter/results/results.csv -e -o ~/jmeter-project/webhttp/target/jmeter/reports/TestReport/ -Gthreads.count=${threads} -Grampup.duration=${rampup} -Gloop.count=${loop}"
                     '''
                 }
             }
