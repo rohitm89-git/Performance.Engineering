@@ -73,8 +73,8 @@
                         </arguments>
                     </jMeterProcessJVMSettings>
 
-                    <!-- <testFilesDirectory>${project.basedir}/webhttp/src/test/jmeter</testFilesDirectory>
-                    <resultsDirectory>${project.basedir}/webhttp/target/jmeter/results</resultsDirectory> -->
+                    <testFilesDirectory>${project.basedir}/webhttp/src/test/jmeter</testFilesDirectory>
+                    <resultsDirectory>${project.basedir}/webhttp/target/jmeter/results</resultsDirectory>
 
                     <RemoteConfiguration>
                         <enable>true</enable>
@@ -84,10 +84,10 @@
                         <!-- <stopServersAfterTests>true</stopServersAfterTests> -->
                     </RemoteConfiguration>
 
-                    <!-- <properties>
+                    <properties>
                         <jmeter.test.file>testFiles/blazeDemo.jmx</jmeter.test.file>
                         <remote_hosts>10.190.0.6,10.190.0.7</remote_hosts>
-                    </properties> -->
+                    </properties>
                 </configuration>
 
                 <executions>

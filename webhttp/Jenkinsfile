@@ -293,7 +293,7 @@ pipeline {
                     // Run the JMeter tests on the VM using the Maven project
                     bat '''
                         gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd /home/Rohit/jmeter-project/webhttp; \
-                        mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} verify"
+                        mvn -Djmeter.remote.enable=true -Djmeter.remote.start.all=true -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} verify"
                     '''
                 }
             }
