@@ -41,7 +41,7 @@ pipeline {
     stages {
         stage('scm-checkout'){
             steps {
-                git branch: 'feature/load-result-validation', credentialsId: '8cf536f0-c46a-4cbc-abd8-1d4c807a2986', url: 'git@github.com:rohitm89-git/Performance.Engineering.git'
+                git branch: 'load-result-validation', credentialsId: '8cf536f0-c46a-4cbc-abd8-1d4c807a2986', url: 'git@github.com:rohitm89-git/Performance.Engineering.git'
             }
         }
 
