@@ -1,0 +1,16 @@
+{
+  "transactions": {
+    "/reserve.php": {
+      "Avg_RT": { "SLA": 500, "unit": "ms" },
+      "90%_RT": { "SLA": 800, "unit": "ms" },
+      "Error%": { "SLA": 0.5, "unit": "%" },
+      "TPS": { "SLA": 4, "unit": "tps" }
+    },
+    "Total": {
+      "Avg_RT": { "SLA": 300, "unit": "ms" },
+      "90%_RT": { "SLA": 600, "unit": "ms" },
+      "Error%": { "SLA": 1, "unit": "%" },
+      "TPS": { "SLA": 8, "unit": "tps" }
+    }
+  }
+}
