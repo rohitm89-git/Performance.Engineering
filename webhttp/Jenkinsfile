@@ -60,7 +60,7 @@ pipeline {
                     def i = 1
                     for(instance in lgInstances){
                         bat """
-                            gcloud compute scp "${WORKSPACE}\\webhttp\\src\\test\\jmeter\\dummydata${i}.txt" ${instance}:~/apache-jmeter-5.6.3/bin --zone=${ZONE}
+                            gcloud compute scp "${WORKSPACE}\\webhttp\\src\\test\\jmeter\\dummydata${i}.txt" ${instance}:/home/Rohit/apache-jmeter-5.6.3/bin --zone=${ZONE}
                         """
                         i++
                     }
