@@ -370,7 +370,7 @@ pipeline {
             }
 
             post {
-                // If Maven was able to run the tests archive jtl and graphs
+                // If test run successful archive jtl and graphs
                 success {
                     // copy required files to a new directory - written inside script block as groovy code is present
                     // $ notation works probably because bat commands are inside """ instead of '''. havent tested though.
