@@ -1,7 +1,7 @@
 import json
 
 # Load the statistics.json file
-with open('./webhttp/target/allArtifacts/reports/TestReport/statistics.json') as stats_file:
+with open('./webhttp/statistics.json') as stats_file:
     stats_data = json.load(stats_file)
 
 # Load the metrics_sla.json file

@@ -20,7 +20,6 @@ pipeline {
         CONTROLLER_NAME = 'jenkins-ubuntu-test-instance'
         LG1_NAME = 'jenkins-ubuntu-lg1'
         LG2_NAME = 'jenkins-ubuntu-lg2'
-        WORKSPACE_PATH = "${env.WORKSPACE}"
     }
 
     // parameters {
@@ -30,39 +29,40 @@ pipeline {
     // }
     
     parameters {
-        string defaultValue: "1", name: "threads", trim: true
-        string defaultValue: "1", name: "rampup", trim: true
-        string defaultValue: "1", name: "loop", trim: true
-        booleanParam(name: 'createInstances', defaultValue: false, description: '')
-        booleanParam(name: 'startRemoteServers', defaultValue: false, description: '')
-        booleanParam(name: 'stopInstances', defaultValue: false, description: '')
-        booleanParam(name: 'deleteInstances', defaultValue: false, description: '')
+        string defaultValue: "", name: "parent_workspace", trim: true
+        // string defaultValue: "1", name: "rampup", trim: true
+        // string defaultValue: "1", name: "loop", trim: true
+        // booleanParam(name: 'createInstances', defaultValue: false, description: '')
+        // booleanParam(name: 'startRemoteServers', defaultValue: false, description: '')
+        // booleanParam(name: 'stopInstances', defaultValue: false, description: '')
+        // booleanParam(name: 'deleteInstances', defaultValue: false, description: '')
     }
 
     stages {
         stage('scm-checkout'){
             steps {
-                git branch: 'load-result-validation', credentialsId: '8cf536f0-c46a-4cbc-abd8-1d4c807a2986', url: 'git@github.com:rohitm89-git/Performance.Engineering.git'
+                git branch: 'load-result-validation2', credentialsId: '8cf536f0-c46a-4cbc-abd8-1d4c807a2986', url: 'git@github.com:rohitm89-git/Performance.Engineering.git'
             }
         }
 
-        stage('trigger child job to compare metrics with SLA') {
-            steps {
-                script {
-                    build job: 'load-result-validation-pipeline2', parameters: [string(name: 'parent_workspace', value: WORKSPACE_PATH)]
-                }
-            }
-        }
-
-        // stage('compare metrics with SLA') {
+        // stage('trigger child job to compare metrics with SLA') {
         //     steps {
         //         script {
-        //             bat """
-        //                 python ${WORKSPACE}/webhttp/compare.py
-        //             """
+        //             build job: 'load-result-validation-pipeline2', parameters: [string(name: 'parent_workspace', value: WORKSPACE_PATH)]
         //         }
         //     }
         // }
+
+        stage('compare metrics with SLA') {
+            steps {
+                script {
+                    bat """
+                        copy ${params.parent_workspace}/webhttp/target/allArtifacts/reports/TestReport/statistics.json ${WORKSPACE}/webhttp/ ^
+                        && python ${WORKSPACE}/webhttp/compare.py
+                    """
+                }
+            }
+        }
     }
 
     // stages {
