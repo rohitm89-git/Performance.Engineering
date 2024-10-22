@@ -24,12 +24,12 @@ for transaction, stats in stats_data.items():
         throughput = stats.get('throughput')
         sla_throughput = sla.get('TPS').get('SLA')
 
-        print(f"Transaction: {transaction}")
-        f.write(f"Transaction: {transaction}")
-        print(f"Error Pct: {error_pct} (SLA: {sla_error_pct})")
-        f.write(f"Error Pct: {error_pct} (SLA: {sla_error_pct})")
-        print(f"Throughput: {throughput} (SLA: {sla_throughput})")
-        f.write(f"Throughput: {throughput} (SLA: {sla_throughput})")
+        print(f"Transaction: {transaction}\n")
+        f.write(f"Transaction: {transaction}\n")
+        print(f"Error Pct: {error_pct} (SLA: {sla_error_pct})\n")
+        f.write(f"Error Pct: {error_pct} (SLA: {sla_error_pct})\n")
+        print(f"Throughput: {throughput} (SLA: {sla_throughput})\n")
+        f.write(f"Throughput: {throughput} (SLA: {sla_throughput})\n")
 
         if error_pct > sla_error_pct:
             print(f"Error percentage for {transaction} exceeds SLA!")
@@ -40,5 +40,5 @@ for transaction, stats in stats_data.items():
             f.write(f"Throughput for {transaction} is below SLA! \n")
     else:
         print(f"No SLA found for transaction: {transaction}")
-        f.write(f"No SLA found for transaction: {transaction}")
+        f.write(f"No SLA found for transaction: {transaction}\n")
 f.close()
