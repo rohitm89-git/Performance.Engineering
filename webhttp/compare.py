@@ -1,11 +1,11 @@
 import json
 
 # Load the statistics.json file
-with open('./webhttp/target/allArtifacts/reports/TestReport/statistics.json') as stats_file:
+with open('statistics.json') as stats_file:
     stats_data = json.load(stats_file)
 
 # Load the metrics_sla.json file
-with open('./webhttp/metrics_sla.json') as sla_file:
+with open('metrics_sla.json') as sla_file:
     sla_data = json.load(sla_file)
 
 # Iterate over each transaction in stats.json
