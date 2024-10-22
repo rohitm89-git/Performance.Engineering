@@ -20,6 +20,7 @@ pipeline {
         CONTROLLER_NAME = 'jenkins-ubuntu-test-instance'
         LG1_NAME = 'jenkins-ubuntu-lg1'
         LG2_NAME = 'jenkins-ubuntu-lg2'
+        WORKSPACE_PATH = "${env.WORKSPACE}"
     }
 
     // parameters {
@@ -45,15 +46,23 @@ pipeline {
             }
         }
 
-        stage('compare metrics with SLA') {
+        stage('trigger child job to compare metrics with SLA') {
             steps {
                 script {
-                    bat """
-                        python ${WORKSPACE}/webhttp/compare.py
-                    """
+                    build job: 'load-result-validation-pipeline2', parameters: [string(name: 'parent_workspace', value: WORKSPACE_PATH)]
                 }
             }
         }
+
+        // stage('compare metrics with SLA') {
+        //     steps {
+        //         script {
+        //             bat """
+        //                 python ${WORKSPACE}/webhttp/compare.py
+        //             """
+        //         }
+        //     }
+        // }
     }
 
     // stages {
