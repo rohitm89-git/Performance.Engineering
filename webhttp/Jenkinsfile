@@ -52,433 +52,433 @@ pipeline {
     //     }
     // }
 
+    // stages {
+    //     stage('copying datafiles') {
+    //         steps {
+    //             script {
+    //                 def lgInstances = [env.LG1_NAME, env.LG2_NAME]
+    //                 def i = 1
+    //                 for(instance in lgInstances){
+    //                     bat """
+    //                         gcloud compute scp "${WORKSPACE}\\webhttp\\src\\test\\jmeter\\dummydata${i}.txt" ${instance}:/home/Rohit/apache-jmeter-5.6.3/bin --zone=${ZONE}
+    //                     """
+    //                     i++
+    //                 }
+    //             }
+    //         }
+
+    //     }
+    // }
+
+
     stages {
-        stage('copying datafiles') {
+        stage('Authenticate with Google Cloud') {
             steps {
                 script {
-                    def lgInstances = [env.LG1_NAME, env.LG2_NAME]
-                    def i = 1
-                    for(instance in lgInstances){
-                        bat """
-                            gcloud compute scp "${WORKSPACE}\\webhttp\\src\\test\\jmeter\\dummydata${i}.txt" ${instance}:/home/Rohit/apache-jmeter-5.6.3/bin --zone=${ZONE}
-                        """
-                        i++
+                    // Authenticate with Google Cloud using the service account
+                    bat '''
+                        gcloud version ^
+                        && gcloud auth activate-service-account --key-file="%SERVICE_ACCOUNT_KEY%" ^
+                        && gcloud compute zones list
+                    '''
+                }
+            }
+        }
+
+        stage('Create/Start Linux Compute Instance') {
+            steps {
+                script {
+                    def createInstanceFlag = params.createInstances
+                    // Create a new Linux Compute Engine instance (Controller)
+                    if(createInstanceFlag) {
+                        bat '''
+                        gcloud compute instances create %CONTROLLER_NAME% ^
+                        --zone=%ZONE% ^
+                        --machine-type=%MACHINE_TYPE% ^
+                        --image-family=%IMAGE_FAMILY% ^
+                        --image-project=%IMAGE_PROJECT% ^
+                        --boot-disk-size=100GB ^
+                        --metadata ubuntu-startup-script-ps1="Write-Host \\"Instance startup complete\\""
+                        '''
+                        // Create a new Linux Compute Engine instance (Load generators)
+                        bat '''
+                            gcloud compute instances create %LG1_NAME% %LG2_NAME% ^
+                            --zone=%ZONE% ^
+                            --machine-type=%MACHINE_TYPE% ^
+                            --image-family=%IMAGE_FAMILY% ^
+                            --image-project=%IMAGE_PROJECT% ^
+                            --boot-disk-size=100GB ^
+                            --metadata ubuntu-startup-script-ps1="Write-Host \\"Instance startup complete\\""
+                        '''
+                        sleep 60 // wait time
+                    }else {
+                        echo 'Instances are already created. Starting instances.'
+                        // start VMs if created but in stopped state
+                        bat '''
+                            gcloud compute instances start %CONTROLLER_NAME% %LG1_NAME% %LG2_NAME% --zone=%ZONE%
+                        '''
+                        sleep 20 // wait time
                     }
+                    
+                }
+            }
+        }
+
+        // stage('Start compute instance') {
+        //     steps {
+        //         script {
+        //             // start VMs if created but in stopped state
+        //             bat '''
+        //                 gcloud compute instances start %CONTROLLER_NAME% %LG1_NAME% %LG2_NAME% --zone=%ZONE%
+        //             '''
+        //         }
+        //     }
+        // }
+
+        stage('scm-checkout'){
+            steps {
+                git branch: 'feature/distributed-with-cloud', credentialsId: '8cf536f0-c46a-4cbc-abd8-1d4c807a2986', url: 'git@github.com:rohitm89-git/Performance.Engineering.git'
+            }
+        }
+
+        stage('Add LGs as remote host in jenkins workspace user.prop file') {
+            steps {
+                script{
+                    // def lgInstances = ['jenkins-ubuntu-lg1']
+                    def lgInstances = [env.LG1_NAME, env.LG2_NAME]
+                    def externalIp, internalIp
+                    def ipList = ""
+                    for(instance in lgInstances){
+                        externalIp = bat(script: """@gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"""", returnStdout: true).trim() // @ is needed to get only o/p of command
+                        internalIp = bat(script: """@gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].networkIP)\"""", returnStdout: true).trim()
+                        // def internalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].networkIP)\"""" // direct bat does not save output to groovy variable
+                        // def externalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"""" // direct bat does not save output to groovy variable
+                        
+                        // bat """
+                        //     echo '${externalIp} - ${internalIp}'; \
+                        //     ping ${externalIp} >> 2.txt;
+                        // """
+
+                        ipList = ipList + internalIp + ","
+
+                        bat """
+                            ping ${externalIp}
+                        """
+                    }
+
+                    bat """
+                        cd ${WORKSPACE}\\webhttp\\src\\test\\jmeter ^
+                        && echo. >> user.properties ^
+                        && echo ### added remote hosts >> user.properties ^
+                        && echo remote_hosts=${ipList} >> user.properties ^
+                        && echo. >> user.properties
+                    """            
+                }   
+            }
+        }
+
+        stage('Copy maven project to Controller VM') {
+            steps {
+                script {
+                    // Copy the checked out project to the VM
+                    // sh '''
+                    //     gcloud compute scp -r ./* ${INSTANCE_NAME}:~/maven-project --zone=${ZONE}
+                    // '''
+                    bat '''
+                        gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="mkdir -p jmeter-project" ^
+                        && echo %WORKSPACE% ^
+                        && gcloud compute scp --recurse "%WORKSPACE%\\webhttp" %CONTROLLER_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
+                    '''
+                }
+            }
+        }
+
+        stage('Install Dependencies on Controller and LGs') {
+            steps {
+                script {
+                    if(params.createInstances) {
+                        def vmInstances = [env.CONTROLLER_NAME,env.LG1_NAME,env.LG2_NAME]
+                        // SSH into the VM and install Maven, Java, JMeter
+                        // catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        for(instance in vmInstances){
+                            bat """
+                                gcloud compute ssh ${instance} --zone=${ZONE} --command="sudo apt-get update; \
+                                sudo apt install openjdk-11-jdk; \
+                                java --version; \
+                                sudo apt install maven -y; \
+                                mvn --version"
+                            """
+                        }
+                        // bat '''
+                        //     gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="sudo apt-get update; \
+                        //     sudo apt install openjdk-11-jdk; \
+                        //     java --version; \
+                        //     sudo apt install maven -y; \
+                        //     mvn --version"
+                        // '''
+                                // wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.5.tgz;
+                                // tar -xvzf apache-jmeter-5.5.tgz;"
+                        // }
+
+                    }
+                    
+                }
+            }
+        }
+
+        stage('Install/Configure Jmeter and start jmeter-server on LGs') {
+            steps {
+                script {
+                    // def lgInstances = ['jenkins-ubuntu-lg1']
+                    def lgInstances = [env.LG1_NAME,env.LG2_NAME]
+                    // def setupScript =  '''
+                    //     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
+                    //     tar -xvzf apache-jmeter-5.6.3.tgz;
+                    // '''
+
+                    // install jmeter on controller - this wont work as plugins wont be there
+                    // bat """
+                    //         gcloud compute ssh ${CONTROLLER_NAME} --zone=${ZONE} --command="\
+                    //         wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
+                    //         tar -xvzf apache-jmeter-5.6.3.tgz; \
+                    //         cd ~/apache-jmeter-5.6.3/bin; \
+                    //         cp -f ~/jmeter-project/webhttp/src/test/jmeter/user.properties ./"
+                    //     """
+
+                    if(params.createInstances) {
+                        // loop through each lg instance - install jmeter and add disable ssl for rmi to user.prop
+                        for(instance in lgInstances) {
+                            bat """
+                                gcloud compute ssh ${instance} --zone=${ZONE} --command="\
+                                wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
+                                tar -xvzf apache-jmeter-5.6.3.tgz; \
+                                cd ~/apache-jmeter-5.6.3/bin; \
+                                echo '### disabling ssl for rmi' >> user.properties; \
+                                echo 'server.rmi.ssl.disable=true' >> user.properties"
+                            """
+                        }
+                    }
+
+                    if(params.startRemoteServers) {
+                        // loop through each lg instance - start jmeter-server
+                        for(instance in lgInstances) {
+                            bat """
+                                gcloud compute ssh ${instance} --zone=${ZONE} --command="\
+                                cd ~/apache-jmeter-5.6.3/bin; \
+                                nohup ./jmeter-server > jmeter-server-run.log 2>&1 &"
+                            """
+                        }
+                    }    
+
+                    //     // bat """
+                    //     //     gcloud compute ssh ${instance} --zone=${ZONE} --command="\
+                    //     //     cd /home/Rohit/apache-jmeter-5.6.3/bin; \
+                    //     //     echo '### disabling ssl for rmi' >> user.properties; \
+                    //     //     echo 'server.rmi.ssl.disable=true' >> user.properties; \
+                    //     //     nohup ./jmeter-server > jmeter-server-run.log 2>&1 &"
+                    //     // """
+
+                    //     bat """
+                    //         gcloud compute ssh ${instance} --zone=${ZONE} --command="\
+                    //         cd /home/Rohit/apache-jmeter-5.6.3/bin; \
+                    //         nohup ./jmeter-server > jmeter-server-run.log 2>&1 &"
+                    //     """
+
+                        
+                    //     // bat '''
+                    //     //     gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="\
+                    //     //     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
+                    //     //     tar -xvzf apache-jmeter-5.6.3.tgz;"
+                    //     // '''
+                    // }
+                    
+                }
+            }
+        }
+        
+        // stage('Run Command on Linux Instance') {
+        //     steps {
+        //         script {
+        //             //sleep 60 // sleep time to allow instance to fully boot before attempting SSH
+        //             // SSH into the Windows instance and run the command to display gcloud version with retry loop
+        //             // created a directory to copy files from jenkins workspace to vm
+        //             retry(5){
+        //                 bat '''
+        //                 gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="gcloud --version; \
+        //                 ip -f inet address; \
+        //                 mkdir jmeter-project; \
+        //                 echo \\"this is inside the linux VM\\""
+        //             '''
+        //             }
+        //         }
+        //     }
+        // }        
+
+        
+
+        // stage('Start jmeter-server on load gens instances') {
+        //     steps {
+                
+        //     }
+        // }
+
+        // stage('add remote hosts to controller user.prop file') {
+        //     steps {
+        //         script{
+        //             def lgInstances = ['jenkins-ubuntu-lg1']
+        //             def externalIp, internalIp
+        //             def ipList = ""
+        //             for(instance in lgInstances){
+        //                 externalIp = bat(script: """@gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"""", returnStdout: true).trim() // @ is needed to get only o/p of command
+        //                 internalIp = bat(script: """@gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].networkIP)\"""", returnStdout: true).trim()
+        //                 // def internalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].networkIP)\"""" // direct bat does not save output to groovy variable
+        //                 // def externalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"""" // direct bat does not save output to groovy variable
+                        
+        //                 // bat """
+        //                 //     echo '${externalIp} - ${internalIp}'; \
+        //                 //     ping ${externalIp} >> 2.txt;
+        //                 // """
+
+        //                 ipList = ipList + externalIp + "," 
+
+        //                 bat """
+        //                     ping ${externalIp}
+        //                 """
+        //             }
+
+        //             bat """
+        //                 cd ${WORKSPACE}\\webhttp\\src\\test\\jmeter ^
+        //                 && echo. >> user.properties ^
+        //                 && echo ### added remote hosts >> user.properties ^
+        //                 && echo remote_hosts=${ipList} >> user.properties ^
+        //                 && echo. >> user.properties
+        //             """            
+        //         }                
+        //     }
+        // }
+
+        stage('run mvn to get maven dependencies on controller') {
+            steps {
+                // Run Maven on a Windows agent.
+                // bat """cd webhttp/
+                // mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"""
+                script {
+                    // Run the JMeter tests on the VM using the Maven project
+                    bat '''
+                        gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd /home/Rohit/jmeter-project/webhttp; \
+                        mvn clean verify"
+                    '''
+                }
+            }   
+        }
+        
+        stage('execute-distributed-load-test'){
+            steps {
+                script {
+                    // bat '''
+                    //     gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd ~/jmeter-project/webhttp/target/jmeter/bin; \
+                    //     java -jar ApacheJMeter-5.6.3.jar -n -t ~/jmeter-project/webhttp/src/test/jmeter/blazeDemo.jmx -r -l ~/jmeter-project/webhttp/target/jmeter/results/results.csv -e -o ~/jmeter-project/webhttp/target/jmeter/reports/TestReport/ -Gthreads.count=${threads} -Grampup.duration=${rampup} -Gloop.count=${loop}"
+                    // '''
+
+                    bat """
+                        gcloud compute ssh ${CONTROLLER_NAME} --zone=${ZONE} --command=\"cd ~/jmeter-project/webhttp/target/jmeter/bin; \
+                        java -jar ApacheJMeter-5.6.3.jar -n -t ~/jmeter-project/webhttp/src/test/jmeter/blazeDemo.jmx -r -l ~/jmeter-project/webhttp/target/jmeter/results/results.csv -e -o ~/jmeter-project/webhttp/target/jmeter/reports/TestReport/ -Gthreads.count=${threads} -Grampup.duration=${rampup} -Gloop.count=${loop}"
+                    """
                 }
             }
 
+            post {
+                // If test run successful archive jtl and graphs
+                success {
+                    // copy required files to a new directory - written inside script block as groovy code is present
+                    // $ notation works probably because bat commands are inside """ instead of '''. havent tested though.
+                    script{
+                        def targetDir = "${WORKSPACE}\\webhttp\\target\\allArtifacts"
+                        bat """ 
+                            mkdir ${targetDir} ^
+                            && gcloud compute scp --recurse %CONTROLLER_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/results ${targetDir} --zone=%ZONE% ^
+                            && gcloud compute scp --recurse %CONTROLLER_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/reports ${targetDir} --zone=%ZONE%
+                        """
+                    
+                    // def targetDir = "**/webhttp/target/allArtifacts"
+                    // bat """ mkdir ${targetDir}
+                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${targetDir} /s
+                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/reports/ ${targetDir} /s"""
+                    
+                    // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${WORKSPACE}/webhttp/target/allArtifacts /s
+                    
+                    
+                    // zip zipFile: "allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "webhttp/target/jmeter/results/"
+                        // zip zipFile: "**\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"
+                        zip zipFile: "${WORKSPACE}\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"    
+                    
+                        archiveArtifacts "webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip"
+
+                        bat '''
+                            gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd ~/jmeter-project/webhttp/target/jmeter/; \
+                            rm -rf results/ reports/; \
+                            mkdir -p results/ reports/"
+                        '''
+                    }
+                    // archiveArtifacts '**/webhttp/target/jmeter/results/'
+
+                    // script {
+                    // // Copy the JMeter results from the VM back to Jenkins
+                    // bat '''
+                    //     gcloud compute scp %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/results/* ./results_hello --zone=%ZONE%
+                    // '''
+                    // // Archive the results as Jenkins artifacts
+                    // archiveArtifacts artifacts: 'results_hello/*', allowEmptyArchive: true
+                    // }                    
+                }
+            }
+        }            
+        
+        // stage('publish-performance-trend-report'){
+        //     steps{
+        //         // perfReport sourceDataFiles: "**/*.csv", compareBuildPrevious: true, graphType: "Percentile Response Time", showTrendGraphs: true
+        //         perfReport filterRegex: "", graphType: "PRT", percentiles: "90,95,99", showTrendGraphs: true, sourceDataFiles: "**/*.csv", compareBuildPrevious: true
+        //     }
+        // }
+        
+        // stage('clear workspace'){
+        //     steps{
+        //         cleanWs(patterns: [[pattern: 'allArtifacts*', type: 'INCLUDE']])
+        //     }
+        // }
+
+        stage('stop all vms') {
+            steps {
+                script {
+                    def vmInstances = [env.CONTROLLER_NAME,env.LG1_NAME,env.LG2_NAME]
+                    if(params.stopInstances) {
+                        for(instance in vmInstances) {
+                            bat """
+                                gcloud compute instances stop ${instance}
+                            """
+                        }
+                    }
+
+                }
+            }
+        }
+
+        stage('delete all vms') {
+            steps {
+                script {
+                    def vmInstances = [env.CONTROLLER_NAME,env.LG1_NAME,env.LG2_NAME]
+                    if(params.deleteInstances) {
+                        for(instance in vmInstances) {
+                            bat """
+                                gcloud compute instances delete ${instance} --zone=${ZONE}
+                            """
+                        }
+                    }
+
+                }
+            }
         }
     }
-
-
-    // stages {
-    //     stage('Authenticate with Google Cloud') {
-    //         steps {
-    //             script {
-    //                 // Authenticate with Google Cloud using the service account
-    //                 bat '''
-    //                     gcloud version ^
-    //                     && gcloud auth activate-service-account --key-file="%SERVICE_ACCOUNT_KEY%" ^
-    //                     && gcloud compute zones list
-    //                 '''
-    //             }
-    //         }
-    //     }
-
-    //     stage('Create/Start Linux Compute Instance') {
-    //         steps {
-    //             script {
-    //                 def createInstanceFlag = params.createInstances
-    //                 // Create a new Linux Compute Engine instance (Controller)
-    //                 if(createInstanceFlag) {
-    //                     bat '''
-    //                     gcloud compute instances create %CONTROLLER_NAME% ^
-    //                     --zone=%ZONE% ^
-    //                     --machine-type=%MACHINE_TYPE% ^
-    //                     --image-family=%IMAGE_FAMILY% ^
-    //                     --image-project=%IMAGE_PROJECT% ^
-    //                     --boot-disk-size=100GB ^
-    //                     --metadata ubuntu-startup-script-ps1="Write-Host \\"Instance startup complete\\""
-    //                     '''
-    //                     // Create a new Linux Compute Engine instance (Load generators)
-    //                     bat '''
-    //                         gcloud compute instances create %LG1_NAME% %LG2_NAME% ^
-    //                         --zone=%ZONE% ^
-    //                         --machine-type=%MACHINE_TYPE% ^
-    //                         --image-family=%IMAGE_FAMILY% ^
-    //                         --image-project=%IMAGE_PROJECT% ^
-    //                         --boot-disk-size=100GB ^
-    //                         --metadata ubuntu-startup-script-ps1="Write-Host \\"Instance startup complete\\""
-    //                     '''
-    //                     sleep 60 // wait time
-    //                 }else {
-    //                     echo 'Instances are already created. Starting instances.'
-    //                     // start VMs if created but in stopped state
-    //                     bat '''
-    //                         gcloud compute instances start %CONTROLLER_NAME% %LG1_NAME% %LG2_NAME% --zone=%ZONE%
-    //                     '''
-    //                     sleep 20 // wait time
-    //                 }
-                    
-    //             }
-    //         }
-    //     }
-
-    //     // stage('Start compute instance') {
-    //     //     steps {
-    //     //         script {
-    //     //             // start VMs if created but in stopped state
-    //     //             bat '''
-    //     //                 gcloud compute instances start %CONTROLLER_NAME% %LG1_NAME% %LG2_NAME% --zone=%ZONE%
-    //     //             '''
-    //     //         }
-    //     //     }
-    //     // }
-
-    //     stage('scm-checkout'){
-    //         steps {
-    //             git branch: 'feature/distributed-with-cloud', credentialsId: '8cf536f0-c46a-4cbc-abd8-1d4c807a2986', url: 'git@github.com:rohitm89-git/Performance.Engineering.git'
-    //         }
-    //     }
-
-    //     stage('Add LGs as remote host in jenkins workspace user.prop file') {
-    //         steps {
-    //             script{
-    //                 // def lgInstances = ['jenkins-ubuntu-lg1']
-    //                 def lgInstances = [env.LG1_NAME, env.LG2_NAME]
-    //                 def externalIp, internalIp
-    //                 def ipList = ""
-    //                 for(instance in lgInstances){
-    //                     externalIp = bat(script: """@gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"""", returnStdout: true).trim() // @ is needed to get only o/p of command
-    //                     internalIp = bat(script: """@gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].networkIP)\"""", returnStdout: true).trim()
-    //                     // def internalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].networkIP)\"""" // direct bat does not save output to groovy variable
-    //                     // def externalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"""" // direct bat does not save output to groovy variable
-                        
-    //                     // bat """
-    //                     //     echo '${externalIp} - ${internalIp}'; \
-    //                     //     ping ${externalIp} >> 2.txt;
-    //                     // """
-
-    //                     ipList = ipList + internalIp + ","
-
-    //                     bat """
-    //                         ping ${externalIp}
-    //                     """
-    //                 }
-
-    //                 bat """
-    //                     cd ${WORKSPACE}\\webhttp\\src\\test\\jmeter ^
-    //                     && echo. >> user.properties ^
-    //                     && echo ### added remote hosts >> user.properties ^
-    //                     && echo remote_hosts=${ipList} >> user.properties ^
-    //                     && echo. >> user.properties
-    //                 """            
-    //             }   
-    //         }
-    //     }
-
-    //     stage('Copy maven project to Controller VM') {
-    //         steps {
-    //             script {
-    //                 // Copy the checked out project to the VM
-    //                 // sh '''
-    //                 //     gcloud compute scp -r ./* ${INSTANCE_NAME}:~/maven-project --zone=${ZONE}
-    //                 // '''
-    //                 bat '''
-    //                     gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="mkdir -p jmeter-project" ^
-    //                     && echo %WORKSPACE% ^
-    //                     && gcloud compute scp --recurse "%WORKSPACE%\\webhttp" %CONTROLLER_NAME%:/home/Rohit/jmeter-project --zone=%ZONE%
-    //                 '''
-    //             }
-    //         }
-    //     }
-
-    //     stage('Install Dependencies on Controller and LGs') {
-    //         steps {
-    //             script {
-    //                 if(params.createInstances) {
-    //                     def vmInstances = [env.CONTROLLER_NAME,env.LG1_NAME,env.LG2_NAME]
-    //                     // SSH into the VM and install Maven, Java, JMeter
-    //                     // catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-    //                     for(instance in vmInstances){
-    //                         bat """
-    //                             gcloud compute ssh ${instance} --zone=${ZONE} --command="sudo apt-get update; \
-    //                             sudo apt install openjdk-11-jdk; \
-    //                             java --version; \
-    //                             sudo apt install maven -y; \
-    //                             mvn --version"
-    //                         """
-    //                     }
-    //                     // bat '''
-    //                     //     gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="sudo apt-get update; \
-    //                     //     sudo apt install openjdk-11-jdk; \
-    //                     //     java --version; \
-    //                     //     sudo apt install maven -y; \
-    //                     //     mvn --version"
-    //                     // '''
-    //                             // wget https://downloads.apache.org//jmeter/binaries/apache-jmeter-5.5.tgz;
-    //                             // tar -xvzf apache-jmeter-5.5.tgz;"
-    //                     // }
-
-    //                 }
-                    
-    //             }
-    //         }
-    //     }
-
-    //     stage('Install/Configure Jmeter and start jmeter-server on LGs') {
-    //         steps {
-    //             script {
-    //                 // def lgInstances = ['jenkins-ubuntu-lg1']
-    //                 def lgInstances = [env.LG1_NAME,env.LG2_NAME]
-    //                 // def setupScript =  '''
-    //                 //     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
-    //                 //     tar -xvzf apache-jmeter-5.6.3.tgz;
-    //                 // '''
-
-    //                 // install jmeter on controller - this wont work as plugins wont be there
-    //                 // bat """
-    //                 //         gcloud compute ssh ${CONTROLLER_NAME} --zone=${ZONE} --command="\
-    //                 //         wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
-    //                 //         tar -xvzf apache-jmeter-5.6.3.tgz; \
-    //                 //         cd ~/apache-jmeter-5.6.3/bin; \
-    //                 //         cp -f ~/jmeter-project/webhttp/src/test/jmeter/user.properties ./"
-    //                 //     """
-
-    //                 if(params.createInstances) {
-    //                     // loop through each lg instance - install jmeter and add disable ssl for rmi to user.prop
-    //                     for(instance in lgInstances) {
-    //                         bat """
-    //                             gcloud compute ssh ${instance} --zone=${ZONE} --command="\
-    //                             wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
-    //                             tar -xvzf apache-jmeter-5.6.3.tgz; \
-    //                             cd ~/apache-jmeter-5.6.3/bin; \
-    //                             echo '### disabling ssl for rmi' >> user.properties; \
-    //                             echo 'server.rmi.ssl.disable=true' >> user.properties"
-    //                         """
-    //                     }
-    //                 }
-
-    //                 if(params.startRemoteServers) {
-    //                     // loop through each lg instance - start jmeter-server
-    //                     for(instance in lgInstances) {
-    //                         bat """
-    //                             gcloud compute ssh ${instance} --zone=${ZONE} --command="\
-    //                             cd ~/apache-jmeter-5.6.3/bin; \
-    //                             nohup ./jmeter-server > jmeter-server-run.log 2>&1 &"
-    //                         """
-    //                     }
-    //                 }    
-
-    //                 //     // bat """
-    //                 //     //     gcloud compute ssh ${instance} --zone=${ZONE} --command="\
-    //                 //     //     cd /home/Rohit/apache-jmeter-5.6.3/bin; \
-    //                 //     //     echo '### disabling ssl for rmi' >> user.properties; \
-    //                 //     //     echo 'server.rmi.ssl.disable=true' >> user.properties; \
-    //                 //     //     nohup ./jmeter-server > jmeter-server-run.log 2>&1 &"
-    //                 //     // """
-
-    //                 //     bat """
-    //                 //         gcloud compute ssh ${instance} --zone=${ZONE} --command="\
-    //                 //         cd /home/Rohit/apache-jmeter-5.6.3/bin; \
-    //                 //         nohup ./jmeter-server > jmeter-server-run.log 2>&1 &"
-    //                 //     """
-
-                        
-    //                 //     // bat '''
-    //                 //     //     gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="\
-    //                 //     //     wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz; \
-    //                 //     //     tar -xvzf apache-jmeter-5.6.3.tgz;"
-    //                 //     // '''
-    //                 // }
-                    
-    //             }
-    //         }
-    //     }
-        
-    //     // stage('Run Command on Linux Instance') {
-    //     //     steps {
-    //     //         script {
-    //     //             //sleep 60 // sleep time to allow instance to fully boot before attempting SSH
-    //     //             // SSH into the Windows instance and run the command to display gcloud version with retry loop
-    //     //             // created a directory to copy files from jenkins workspace to vm
-    //     //             retry(5){
-    //     //                 bat '''
-    //     //                 gcloud compute ssh %INSTANCE_NAME% --zone=%ZONE% --command="gcloud --version; \
-    //     //                 ip -f inet address; \
-    //     //                 mkdir jmeter-project; \
-    //     //                 echo \\"this is inside the linux VM\\""
-    //     //             '''
-    //     //             }
-    //     //         }
-    //     //     }
-    //     // }        
-
-        
-
-    //     // stage('Start jmeter-server on load gens instances') {
-    //     //     steps {
-                
-    //     //     }
-    //     // }
-
-    //     // stage('add remote hosts to controller user.prop file') {
-    //     //     steps {
-    //     //         script{
-    //     //             def lgInstances = ['jenkins-ubuntu-lg1']
-    //     //             def externalIp, internalIp
-    //     //             def ipList = ""
-    //     //             for(instance in lgInstances){
-    //     //                 externalIp = bat(script: """@gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"""", returnStdout: true).trim() // @ is needed to get only o/p of command
-    //     //                 internalIp = bat(script: """@gcloud compute instances describe ${instance} --zone=${zone} --format=\"get(networkInterfaces[0].networkIP)\"""", returnStdout: true).trim()
-    //     //                 // def internalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].networkIP)\"""" // direct bat does not save output to groovy variable
-    //     //                 // def externalIp = bat """gcloud compute instances describe ${instance} --zone=%ZONE% --format=\"get(networkInterfaces[0].accessConfigs[0].natIP)\"""" // direct bat does not save output to groovy variable
-                        
-    //     //                 // bat """
-    //     //                 //     echo '${externalIp} - ${internalIp}'; \
-    //     //                 //     ping ${externalIp} >> 2.txt;
-    //     //                 // """
-
-    //     //                 ipList = ipList + externalIp + "," 
-
-    //     //                 bat """
-    //     //                     ping ${externalIp}
-    //     //                 """
-    //     //             }
-
-    //     //             bat """
-    //     //                 cd ${WORKSPACE}\\webhttp\\src\\test\\jmeter ^
-    //     //                 && echo. >> user.properties ^
-    //     //                 && echo ### added remote hosts >> user.properties ^
-    //     //                 && echo remote_hosts=${ipList} >> user.properties ^
-    //     //                 && echo. >> user.properties
-    //     //             """            
-    //     //         }                
-    //     //     }
-    //     // }
-
-    //     stage('run mvn to get maven dependencies on controller') {
-    //         steps {
-    //             // Run Maven on a Windows agent.
-    //             // bat """cd webhttp/
-    //             // mvn -Dthreads.count=${threads} -Drampup.duration=${rampup} -Dloop.count=${loop} clean verify"""
-    //             script {
-    //                 // Run the JMeter tests on the VM using the Maven project
-    //                 bat '''
-    //                     gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd /home/Rohit/jmeter-project/webhttp; \
-    //                     mvn clean verify"
-    //                 '''
-    //             }
-    //         }   
-    //     }
-        
-    //     stage('execute-distributed-load-test'){
-    //         steps {
-    //             script {
-    //                 // bat '''
-    //                 //     gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd ~/jmeter-project/webhttp/target/jmeter/bin; \
-    //                 //     java -jar ApacheJMeter-5.6.3.jar -n -t ~/jmeter-project/webhttp/src/test/jmeter/blazeDemo.jmx -r -l ~/jmeter-project/webhttp/target/jmeter/results/results.csv -e -o ~/jmeter-project/webhttp/target/jmeter/reports/TestReport/ -Gthreads.count=${threads} -Grampup.duration=${rampup} -Gloop.count=${loop}"
-    //                 // '''
-
-    //                 bat """
-    //                     gcloud compute ssh ${CONTROLLER_NAME} --zone=${ZONE} --command=\"cd ~/jmeter-project/webhttp/target/jmeter/bin; \
-    //                     java -jar ApacheJMeter-5.6.3.jar -n -t ~/jmeter-project/webhttp/src/test/jmeter/blazeDemo.jmx -r -l ~/jmeter-project/webhttp/target/jmeter/results/results.csv -e -o ~/jmeter-project/webhttp/target/jmeter/reports/TestReport/ -Gthreads.count=${threads} -Grampup.duration=${rampup} -Gloop.count=${loop}"
-    //                 """
-    //             }
-    //         }
-
-    //         post {
-    //             // If test run successful archive jtl and graphs
-    //             success {
-    //                 // copy required files to a new directory - written inside script block as groovy code is present
-    //                 // $ notation works probably because bat commands are inside """ instead of '''. havent tested though.
-    //                 script{
-    //                     def targetDir = "${WORKSPACE}\\webhttp\\target\\allArtifacts"
-    //                     bat """ 
-    //                         mkdir ${targetDir} ^
-    //                         && gcloud compute scp --recurse %CONTROLLER_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/results ${targetDir} --zone=%ZONE% ^
-    //                         && gcloud compute scp --recurse %CONTROLLER_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/reports ${targetDir} --zone=%ZONE%
-    //                     """
-                    
-    //                 // def targetDir = "**/webhttp/target/allArtifacts"
-    //                 // bat """ mkdir ${targetDir}
-    //                 // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${targetDir} /s
-    //                 // xcopy ${WORKSPACE}/webhttp/target/jmeter/reports/ ${targetDir} /s"""
-                    
-    //                 // xcopy ${WORKSPACE}/webhttp/target/jmeter/results/ ${WORKSPACE}/webhttp/target/allArtifacts /s
-                    
-                    
-    //                 // zip zipFile: "allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "webhttp/target/jmeter/results/"
-    //                     // zip zipFile: "**\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"
-    //                     zip zipFile: "${WORKSPACE}\\webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip", archive: false, dir: "${targetDir}"    
-                    
-    //                     archiveArtifacts "webhttp\\target\\allArtifacts-${BUILD_NUMBER}.zip"
-
-    //                     bat '''
-    //                         gcloud compute ssh %CONTROLLER_NAME% --zone=%ZONE% --command="cd ~/jmeter-project/webhttp/target/jmeter/; \
-    //                         rm -rf results/ reports/; \
-    //                         mkdir -p results/ reports/"
-    //                     '''
-    //                 }
-    //                 // archiveArtifacts '**/webhttp/target/jmeter/results/'
-
-    //                 // script {
-    //                 // // Copy the JMeter results from the VM back to Jenkins
-    //                 // bat '''
-    //                 //     gcloud compute scp %INSTANCE_NAME%:/home/Rohit/jmeter-project/webhttp/target/jmeter/results/* ./results_hello --zone=%ZONE%
-    //                 // '''
-    //                 // // Archive the results as Jenkins artifacts
-    //                 // archiveArtifacts artifacts: 'results_hello/*', allowEmptyArchive: true
-    //                 // }                    
-    //             }
-    //         }
-    //     }            
-        
-    //     // stage('publish-performance-trend-report'){
-    //     //     steps{
-    //     //         // perfReport sourceDataFiles: "**/*.csv", compareBuildPrevious: true, graphType: "Percentile Response Time", showTrendGraphs: true
-    //     //         perfReport filterRegex: "", graphType: "PRT", percentiles: "90,95,99", showTrendGraphs: true, sourceDataFiles: "**/*.csv", compareBuildPrevious: true
-    //     //     }
-    //     // }
-        
-    //     // stage('clear workspace'){
-    //     //     steps{
-    //     //         cleanWs(patterns: [[pattern: 'allArtifacts*', type: 'INCLUDE']])
-    //     //     }
-    //     // }
-
-    //     stage('stop all vms') {
-    //         steps {
-    //             script {
-    //                 def vmInstances = [env.CONTROLLER_NAME,env.LG1_NAME,env.LG2_NAME]
-    //                 if(params.stopInstances) {
-    //                     for(instance in vmInstances) {
-    //                         bat """
-    //                             gcloud compute instances stop ${instance}
-    //                         """
-    //                     }
-    //                 }
-
-    //             }
-    //         }
-    //     }
-
-    //     stage('delete all vms') {
-    //         steps {
-    //             script {
-    //                 def vmInstances = [env.CONTROLLER_NAME,env.LG1_NAME,env.LG2_NAME]
-    //                 if(params.deleteInstances) {
-    //                     for(instance in vmInstances) {
-    //                         bat """
-    //                             gcloud compute instances delete ${instance} --zone=${ZONE}
-    //                         """
-    //                     }
-    //                 }
-
-    //             }
-    //         }
-    //     }
-    // }
 
     post {
             always {
